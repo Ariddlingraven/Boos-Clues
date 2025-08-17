@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>A Midnight Dreary Riddle</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        /* THEME & TYPOGRAPHY 
+            This section establishes the core visual identity based on our research.
+            - "The Scholar's Study" palette: Eerie Black, Charcoal, Parchment, and Tyrian Purple.
+            - Typography: Playfair Display serves as our web-safe Didone-style font for its high contrast and elegance.
+              Montserrat is the clean sans-serif for UI elements, ensuring readability.
+        */
+        body {
+            background-color: #1D1D1D; /* Eerie Black */
+            color: #F1E9D2; /* Parchment */
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden; /* Prevent scrolling until animation is complete */
+        }
+
+        .font-didone {
+            font-family: 'Playfair Display', serif;
+        }
+
+        /* ATMOSPHERIC EFFECTS
+            - Vignette: A subtle radial gradient darkens the edges of the screen, focusing the user's eye
+              on the central text and enhancing the mysterious, candle-lit room feel.
+            - Background Texture & Flicker: A faint noise texture is applied and animated to simulate
+              the flickering of candlelight and the imperfections of an old manuscript.
+        */
+        .vignette {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            box-shadow: inset 0 0 20vw 5vw #1D1D1D;
+            pointer-events: none;
+            z-index: 10;
+        }
+        
+        @keyframes flicker {
+            0%, 100% { opacity: 0.05; }
+            50% { opacity: 0.08; }
+        }
+
+        .noise-texture {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23f)"/></svg>');
+            opacity: 0.05;
+            animation: flicker 10s infinite linear;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /*
+            UI ELEMENT STYLING
+            - Input Field & Button: Styled to match the dark, elegant theme. The focus state for the input
+              uses our Tyrian Purple accent, subtly "bleeding" color into the interface as planned.
+            - Message Box: A modal for feedback that appears with a gentle fade-in.
+        */
+        .riddle-input {
+            background-color: rgba(49, 49, 49, 0.5); /* Charcoal with transparency */
+            border: 1px solid #313131; /* Charcoal */
+            color: #F1E9D2; /* Parchment */
+            transition: all 0.3s ease;
+        }
+
+        .riddle-input:focus {
+            outline: none;
+            border-color: #390D3E; /* Tyrian Purple */
+            box-shadow: 0 0 15px rgba(57, 13, 62, 0.7);
+        }
+
+        .riddle-button {
+            background-color: transparent;
+            border: 1px solid #F1E9D2; /* Parchment */
+            color: #F1E9D2;
+            transition: all 0.3s ease;
+        }
+
+        .riddle-button:hover, .riddle-button:focus {
+            background-color: #390D3E; /* Tyrian Purple */
+            color: #F1E9D2;
+            border-color: #390D3E;
+            box-shadow: 0 0 15px rgba(57, 13, 62, 0.9);
+        }
+        
+        /* LOADING ANIMATION
+            - Drifting Feather: A simple SVG feather that animates from top to bottom, rotating gently.
+              This transforms the necessary loading time into the opening scene of our narrative.
+        */
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #1D1D1D;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .feather {
+            width: 50px;
+            height: 150px;
+            fill: #F1E9D2;
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="bg-[#1D1D1D] flex items-center justify-center min-h-screen">
+
+    <!-- Loader Element -->
+    <div id="loader">
+        <svg class="feather" viewBox="0 0 13 36" xmlns="http://www.w3.org/2000/svg"><path d="M6.5 0C3.52 5.49 0 13.05 0 19.5 0 28.61 2.91 36 6.5 36s6.5-7.39 6.5-16.5C13 13.05 9.48 5.49 6.5 0z"/></svg>
+    </div>
+
+    <!-- Atmospheric Elements -->
+    <div class="noise-texture"></div>
+    <div class="vignette"></div>
+
+    <!-- Main Content -->
+    <main id="content" class="container mx-auto p-8 text-center max-w-3xl opacity-0">
+        <div id="riddle-text" class="font-didone text-3xl md:text-4xl lg:text-5xl leading-relaxed">
+            <!-- The riddle stanzas will be injected here by JavaScript -->
+        </div>
+
+        <!-- Interactive Guessing Area -->
+        <div id="guess-area" class="mt-16 opacity-0 invisible">
+            <input type="text" id="guess-input" class="riddle-input font-didone text-2xl w-full max-w-sm p-3 text-center rounded-lg" placeholder="Speak thy word...">
+            <button id="guess-button" class="riddle-button text-lg uppercase tracking-widest font-semibold px-8 py-3 mt-6 rounded-lg">Answer</button>
+        </div>
+    </main>
+    
+    <!-- Feedback Message Box -->
+    <div id="message-box" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex items-center justify-center opacity-0 invisible transition-opacity duration-500 z-50">
+        <div id="message-content" class="bg-[#1D1D1D] border border-[#313131] p-8 rounded-lg shadow-2xl text-center max-w-md">
+            <p id="message-text" class="text-2xl font-didone"></p>
+            <button id="close-message" class="riddle-button text-sm uppercase tracking-widest font-semibold px-6 py-2 mt-6 rounded-lg">Close</button>
+        </div>
+    </div>
+
+    <!-- GSAP Animation Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DATA ---
+            const riddleStanzas = [
+                `From the silence, darkly spoken,<br>
+                 Threads of riddles left unbroken,<br>
+                 Every word a cryptic token,<br>
+                 From the night’s plutonian shore.`,
+                
+                `Came a fowl vis’tor tapping,<br>
+                 On your thoughts its talons rapping,<br>
+                 Challenger to your mind mapping<br>
+                 Name this bird of myth, and lore.<br>
+                 Till you answer nothing more.`,
+
+                `“Tell me, dreamer, tell me, guesser,<br>
+                 Dare you name this dark confessor?<br>
+                 Mark the sound of your addressor<br>
+                 Bound in poems evermore.`,
+
+                `Sit you now, engage in guessing,<br>
+                 Not one more syllable expressed in—<br>
+                 Name in repetend is dressed in<br>
+                 What’s the word my beak’s caressing,<br>
+                 Say the name I hunger for?<br>
+                 My name is not, nevermore.`
+            ];
+            const correctAnswer = "Quothe";
+
+            // --- UI ELEMENTS ---
+            const loader = document.getElementById('loader');
+            const feather = loader.querySelector('.feather');
+            const content = document.getElementById('content');
+            const riddleTextContainer = document.getElementById('riddle-text');
+            const guessArea = document.getElementById('guess-area');
+            const guessInput = document.getElementById('guess-input');
+            const guessButton = document.getElementById('guess-button');
+            const messageBox = document.getElementById('message-box');
+            const messageText = document.getElementById('message-text');
+            const closeMessageButton = document.getElementById('close-message');
+
+            // --- ANIMATION & LOGIC ---
+
+            /**
+             * Initializes the entire experience, from loading animation to riddle reveal.
+             * This function acts as the main orchestrator.
+             */
+            function initializeExperience() {
+                playLoadingAnimation();
+            }
+
+            /**
+             * Plays the initial "drifting feather" loading animation.
+             * On completion, it fades out the loader and starts the main content animation.
+             */
+            function playLoadingAnimation() {
+                const tl = gsap.timeline();
+                tl.to(feather, { 
+                    duration: 3, 
+                    y: '150vh', 
+                    rotation: 720, 
+                    opacity: 1, 
+                    ease: 'power1.in' 
+                })
+                .to(loader, { 
+                    duration: 1, 
+                    opacity: 0, 
+                    onComplete: () => {
+                        loader.style.display = 'none';
+                        document.body.style.overflow = 'auto'; // Allow scrolling
+                        revealRiddle();
+                    }
+                }, "-=0.5");
+            }
+
+            /**
+             * Reveals the riddle stanza by stanza using a staggered animation.
+             * This is the core "scrollytelling" mechanic, executed automatically here for flow.
+             * It uses a GSAP timeline to sequence the appearance of each part of the poem.
+             */
+            function revealRiddle() {
+                // Populate the container with stanza elements
+                riddleStanzas.forEach((stanza, index) => {
+                    const stanzaEl = document.createElement('p');
+                    stanzaEl.innerHTML = stanza;
+                    stanzaEl.className = 'stanza opacity-0';
+                    stanzaEl.dataset.index = index;
+                    if(index < riddleStanzas.length -1) {
+                        stanzaEl.classList.add('mb-12');
+                    }
+                    riddleTextContainer.appendChild(stanzaEl);
+                });
+
+                const tl = gsap.timeline();
+                tl.to(content, { duration: 1, opacity: 1 })
+                  .to('.stanza', {
+                    duration: 2.5,
+                    opacity: 1,
+                    stagger: 3, // Time between each stanza's animation
+                    ease: 'power2.inOut'
+                }, "+=1")
+                .to(guessArea, {
+                    duration: 1.5,
+                    opacity: 1,
+                    autoAlpha: 1, // Fades in and sets visibility
+                    ease: 'power2.out'
+                }, "-=1");
+            }
+            
+            /**
+             * Checks the user's submitted answer against the correct one.
+             * Triggers success or failure feedback.
+             */
+            function checkAnswer() {
+                const userAnswer = guessInput.value.trim();
+                if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
+                    showFeedback(`Indeed. The word that haunts the silence is... "${correctAnswer}".`, true);
+                } else {
+                    showFeedback("That is not the word whispered on the bleak winds. Try again.", false);
+                    playGlitchAnimation();
+                }
+            }
+
+            /**
+             * Displays the feedback modal with a custom message.
+             * @param {string} text - The message to display.
+             * @param {boolean} isCorrect - If the answer was correct.
+             */
+            function showFeedback(text, isCorrect) {
+                messageText.textContent = text;
+                messageBox.classList.remove('invisible');
+                gsap.to(messageBox, { duration: 0.5, opacity: 1 });
+            }
+
+            /**
+             * Hides the feedback modal.
+             */
+            function hideFeedback() {
+                gsap.to(messageBox, { 
+                    duration: 0.5, 
+                    opacity: 0,
+                    onComplete: () => messageBox.classList.add('invisible')
+                });
+            }
+            
+            /**
+             * Plays a "glitch" animation on the riddle text.
+             * This is a key thematic animation, representing the narrator's unstable mind
+             * upon hearing an incorrect answer. It quickly shifts text properties.
+             */
+            function playGlitchAnimation() {
+                gsap.to('.stanza', {
+                    duration: 0.1,
+                    skewX: 'random(-5, 5)',
+                    opacity: 'random(0.5, 1)',
+                    repeat: 3,
+                    yoyo: true,
+                    ease: 'power4.inOut'
+                });
+            }
+
+            // --- EVENT LISTENERS ---
+            guessButton.addEventListener('click', checkAnswer);
+            guessInput.addEventListener('keyup', (event) => {
+                if (event.key === 'Enter') {
+                    checkAnswer();
+                }
+            });
+            closeMessageButton.addEventListener('click', hideFeedback);
+
+            // --- START THE EXPERIENCE ---
+            initializeExperience();
+        });
+    </script>
+</body>
+</html>
