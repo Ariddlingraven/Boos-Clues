@@ -1,332 +1,596 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Midnight Dreary Riddle</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
-    <style>
-        /* THEME & TYPOGRAPHY 
-            This section establishes the core visual identity based on our research.
-            - "The Scholar's Study" palette: Eerie Black, Charcoal, Parchment, and Tyrian Purple.
-            - Typography: Playfair Display serves as our web-safe Didone-style font for its high contrast and elegance.
-              Montserrat is the clean sans-serif for UI elements, ensuring readability.
-        */
-        body {
-            background-color: #1D1D1D; /* Eerie Black */
-            color: #F1E9D2; /* Parchment */
-            font-family: 'Montserrat', sans-serif;
-            overflow: hidden; /* Prevent scrolling until animation is complete */
-        }
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Obsidian Hibiscus — Puzzle Box</title>
+<style>
+  :root{
+    --ui: #c7b07c;
+    --accent:#3bd0c7; /* teal */
+    --obs:#111;
+    --ink:#0a0a0a;
+    --gold:#d9b25f;
+    --crimson:#a22;
+    --indigo:#3744a3;
+  }
+  html,body{height:100%;margin:0;background:#0b0b0b;color:#e6e0d4;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  #game{position:relative;min-height:100%;overflow:hidden;}
+  #scene{
+    height:62vh; min-height:420px; max-height:70vh;
+    display:grid; place-items:center;
+    background: radial-gradient(ellipse at center, #151515 0%, #0c0c0c 60%, #080808 100%);
+  }
+  #pedestal{
+    position:absolute; inset:auto 0 2vh 0; height:7vh; display:grid; place-items:center;
+    filter: drop-shadow(0 8px 50px #000);
+  }
+  #pedestal img{height:100%;opacity:.4;mix-blend:screen}
+  /* Cube */
+  #cubeWrap{ perspective:1100px; width:min(90vw,1100px); height:100%; display:grid; place-items:center;}
+  #cube{
+    position:relative; width:44vmin; height:44vmin; transform-style:preserve-3d;
+    transition:transform .6s cubic-bezier(.2,.8,.2,1);
+    filter: drop-shadow(0 30px 60px #000);
+  }
+  .face{
+    position:absolute; inset:0; display:grid; place-items:center; user-select:none;
+    background:#111 url('boxTexture.png') center/cover no-repeat;
+    border:1px solid #000; box-shadow: inset 0 0 60px rgba(0,0,0,.7);
+  }
+  .face::after{
+    content:""; position:absolute; inset:0;
+    background:radial-gradient(120% 120% at 50% 50%, transparent 60%, rgba(255,255,255,.04) 100%);
+    pointer-events:none;
+  }
+  .front{ transform: translateZ(22vmin); }
+  .back{ transform: rotateY(180deg) translateZ(22vmin);}
+  .right{ transform: rotateY(90deg) translateZ(22vmin);}
+  .left{ transform: rotateY(-90deg) translateZ(22vmin);}
+  .top{ transform: rotateX(90deg) translateZ(22vmin);}
+  .bottom{ transform: rotateX(-90deg) translateZ(22vmin);}
 
-        .font-didone {
-            font-family: 'Playfair Display', serif;
-        }
+  .face button, .ui button{ cursor:pointer; background:#201e1a; color:var(--ui); border:1px solid #514530; border-radius:.35rem; padding:.5rem .75rem; }
+  .face button:hover, .ui button:hover{ background:#2a2722; }
+  .face .hot{ position:absolute; inset:auto; width:60%; height:60%; border-radius:1rem; outline:2px solid rgba(255,255,255,.04); }
+  .face h2{color:#e6e0d4;text-shadow:0 2px 0 #000; font-weight:600; letter-spacing:.02em}
 
-        /* ATMOSPHERIC EFFECTS
-            - Vignette: A subtle radial gradient darkens the edges of the screen, focusing the user's eye
-              on the central text and enhancing the mysterious, candle-lit room feel.
-            - Background Texture & Flicker: A faint noise texture is applied and animated to simulate
-              the flickering of candlelight and the imperfections of an old manuscript.
-        */
-        .vignette {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            box-shadow: inset 0 0 20vw 5vw #1D1D1D;
-            pointer-events: none;
-            z-index: 10;
-        }
-        
-        @keyframes flicker {
-            0%, 100% { opacity: 0.05; }
-            50% { opacity: 0.08; }
-        }
+  /* Zoom overlay (per-face puzzle UIs) */
+  #overlay{
+    position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f);
+    z-index:10;
+  }
+  #overlay.active{ display:grid; }
+  .panel{
+    width:min(940px,95vw); max-height:92vh; overflow:auto;
+    background:linear-gradient(#171511,#0d0c0b); border:1px solid #3b3122; border-radius:14px; padding:20px; color:#e8e0d2;
+    box-shadow: 0 30px 80px rgba(0,0,0,.7);
+  }
+  .panel h3{margin:.2rem 0 1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase}
+  .panel .row{ display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center;}
+  .glyph, .dial, .mirror, .drum, .node, .petal{ user-select:none; }
+  .glyph{ width:82px; height:82px; display:grid; place-items:center; border:1px solid #3b3122; border-radius:10px; background:#191818; box-shadow:inset 0 0 20px rgba(0,0,0,.6);}
+  .glyph.good{ outline:2px solid #31c758; }
+  .mirror{ width:90px; height:90px; border-radius:50%; border:1px solid #40351f; background:#101010; display:grid; place-items:center; position:relative;}
+  .mirror::before{content:"▲"; color:#a88; font-size:26px; transform:rotate(0deg); transition:transform .2s;}
+  .mirror[data-deg="45"]::before{ transform:rotate(45deg);}
+  .mirror[data-deg="90"]::before{ transform:rotate(90deg);}
+  .mirror[data-deg="135"]::before{ transform:rotate(135deg);}
+  .mirror[data-deg="180"]::before{ transform:rotate(180deg);}
+  .mirror[data-deg="225"]::before{ transform:rotate(225deg);}
+  .mirror[data-deg="270"]::before{ transform:rotate(270deg);}
+  .mirror[data-deg="315"]::before{ transform:rotate(315deg);}
 
-        .noise-texture {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 800"><filter id="f"><feTurbulence type="fractalNoise" baseFrequency="0.65" numOctaves="3" stitchTiles="stitch"/></filter><rect width="100%" height="100%" filter="url(%23f)"/></svg>');
-            opacity: 0.05;
-            animation: flicker 10s infinite linear;
-            pointer-events: none;
-            z-index: -1;
-        }
+  .dial{ width:84px; height:84px; border-radius:50%; background:#151515; border:1px solid #42361d; display:grid; place-items:center; }
+  .dial span{font-size:14px; opacity:.85}
 
-        /*
-            UI ELEMENT STYLING
-            - Input Field & Button: Styled to match the dark, elegant theme. The focus state for the input
-              uses our Tyrian Purple accent, subtly "bleeding" color into the interface as planned.
-            - Message Box: A modal for feedback that appears with a gentle fade-in.
-        */
-        .riddle-input {
-            background-color: rgba(49, 49, 49, 0.5); /* Charcoal with transparency */
-            border: 1px solid #313131; /* Charcoal */
-            color: #F1E9D2; /* Parchment */
-            transition: all 0.3s ease;
-        }
+  .drum{ width:120px; height:120px; border-radius:999px; background:#3b2b16; border:2px solid #5b4121;
+         box-shadow:inset 0 10px 30px rgba(0,0,0,.6);}
+  .drum:active{ filter:brightness(1.1); }
 
-        .riddle-input:focus {
-            outline: none;
-            border-color: #390D3E; /* Tyrian Purple */
-            box-shadow: 0 0 15px rgba(57, 13, 62, 0.7);
-        }
+  .wheel{ position:relative; width:340px; height:340px; }
+  .ring{ position:absolute; inset:0; border-radius:50%; border:2px solid #3a2e19; display:grid; place-items:center; }
+  .outer{ background:repeating-conic-gradient(from 0deg, #0f0f0f 0 22.5deg, #141414 22.5deg 45deg);}
+  .inner{ inset:45px; background:repeating-conic-gradient(from 0deg, #121212 0 22.5deg, #1a1a1a 22.5deg 45deg);}
+  .mark{ position:absolute; top:-12px; width:2px; height:20px; background:var(--gold); left:50%; transform:translateX(-50%);}
+  .keyhole{ position:absolute; inset:auto 0 50% 0; display:grid; place-items:center; }
+  .keyhole button{ padding:.35rem .6rem }
 
-        .riddle-button {
-            background-color: transparent;
-            border: 1px solid #F1E9D2; /* Parchment */
-            color: #F1E9D2;
-            transition: all 0.3s ease;
-        }
+  .tapa{ position:relative; width:min(540px,86vw); height:min(540px,86vw); background:#141313; border:1px solid #3b3122; border-radius:12px; }
+  .nodes{ position:absolute; inset:12px; }
+  .node{ position:absolute; width:26px; height:26px; border-radius:50%; background:#242220; border:1px solid #4c4028; display:grid; place-items:center; color:#9a8; font-size:12px;}
+  .node.active{ outline:2px solid #31c758;}
+  .rope{ position:absolute; inset:0; pointer-events:none; }
+  .rope path{ stroke:#d6c18b; stroke-width:4; fill:none; filter: drop-shadow(0 0 4px rgba(214,193,139,.4)); }
 
-        .riddle-button:hover, .riddle-button:focus {
-            background-color: #390D3E; /* Tyrian Purple */
-            color: #F1E9D2;
-            border-color: #390D3E;
-            box-shadow: 0 0 15px rgba(57, 13, 62, 0.9);
-        }
-        
-        /* LOADING ANIMATION
-            - Drifting Feather: A simple SVG feather that animates from top to bottom, rotating gently.
-              This transforms the necessary loading time into the opening scene of our narrative.
-        */
-        #loader {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #1D1D1D;
-            z-index: 100;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
+  .hibiscus{ position:relative; width:min(560px,86vw); height:min(560px,86vw); display:grid; place-items:center; }
+  .ring6{ position:absolute; width:260px; height:260px; border-radius:50%; border:2px solid #3b3122;
+          transform:rotate(0deg); transition:transform .25s ease; }
+  .ringLabel{ position:absolute; top:-28px; color:#ccc; font-size:12px; left:50%; transform:translateX(-50%); }
+  .petal{
+    position:absolute; width:120px; height:120px; border-radius:18px; display:grid; place-items:center; color:#eee; font-weight:700;
+    background:#151515; border:1px solid #3b3122; box-shadow:inset 0 0 40px rgba(0,0,0,.6);
+  }
+  .petal.good{ outline:2px solid #31c758;}
+  /* petals around ring */
+  .p1{ transform:translate(-60px,-210px); background:linear-gradient(#221, #432); border-color:#5a4528}
+  .p2{ transform:translate(170px,-120px); background:linear-gradient(#111,#223); }
+  .p3{ transform:translate(170px,120px); background:linear-gradient(#102222,#173c3c); }
+  .p4{ transform:translate(-60px,210px); background:linear-gradient(#2a0e0e,#3b1111); }
+  .p5{ transform:translate(-290px,120px); background:linear-gradient(#111,#223); }
+  .p6{ transform:translate(-290px,-120px); background:linear-gradient(#221, #432); }
+  .clr-gold{ color:var(--gold); } .clr-teal{ color:var(--accent);} .clr-crimson{ color:var(--crimson);} .clr-indigo{ color:var(--indigo); }
 
-        .feather {
-            width: 50px;
-            height: 150px;
-            fill: #F1E9D2;
-            opacity: 0;
-        }
-    </style>
+  /* UI: inventory + nav */
+  .ui{ position:relative; padding:.5rem 1rem 1rem; background:linear-gradient(#0a0a0a, #0b0b0b); border-top:1px solid #1c1a15;}
+  #inventory{ display:flex; gap:.5rem; padding:.5rem 0; min-height:52px; align-items:center; }
+  .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4;}
+  .item.armed{ outline:2px solid var(--accent);}
+  .spacer{ flex:1 }
+  .ui button{ margin-right:.35rem }
+  #log{ font-size:.9rem; color:#cbbd9a; opacity:.9; min-height:1.2em }
+  .hud{position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85}
+
+  /* Back / close overlay button */
+  #backBtn{ position:absolute; top:10px; left:10px; z-index:11 }
+</style>
 </head>
-<body class="bg-[#1D1D1D] flex items-center justify-center min-h-screen">
-
-    <!-- Loader Element -->
-    <div id="loader">
-        <svg class="feather" viewBox="0 0 13 36" xmlns="http://www.w3.org/2000/svg"><path d="M6.5 0C3.52 5.49 0 13.05 0 19.5 0 28.61 2.91 36 6.5 36s6.5-7.39 6.5-16.5C13 13.05 9.48 5.49 6.5 0z"/></svg>
+<body>
+<div id="game" aria-label="Obsidian Hibiscus Puzzle Box">
+  <div id="scene" aria-live="polite">
+    <div id="cubeWrap">
+      <div id="cube" role="group" aria-label="Puzzle box" tabindex="0">
+        <div class="face front"  data-face="front"  aria-label="Front face – Totem lock"><div class="hot" data-open="p1"></div></div>
+        <div class="face right"  data-face="right"  aria-label="Right face – Tide calendar"><div class="hot" data-open="p3"></div></div>
+        <div class="face back"   data-face="back"   aria-label="Back face – Blood oath cipher"><div class="hot" data-open="p5"></div></div>
+        <div class="face left"   data-face="left"   aria-label="Left face – Coconut drums"><div class="hot" data-open="p4"></div></div>
+        <div class="face top"    data-face="top"    aria-label="Top face – Sunbeam prism"><div class="hot" data-open="p2"></div></div>
+        <div class="face bottom" data-face="bottom" aria-label="Bottom face – Tapa knot"><div class="hot" data-open="p6"></div></div>
+      </div>
     </div>
+    <div id="pedestal"><img src="obsidian_placeholder.png" alt=""></div>
+  </div>
 
-    <!-- Atmospheric Elements -->
-    <div class="noise-texture"></div>
-    <div class="vignette"></div>
+  <!-- Overlay (puzzle panels) -->
+  <button id="backBtn" hidden aria-label="Back">↩</button>
+  <div id="overlay" aria-hidden="true">
+    <div class="panel" id="panel"></div>
+  </div>
 
-    <!-- Main Content -->
-    <main id="content" class="container mx-auto p-8 text-center max-w-3xl opacity-0">
-        <div id="riddle-text" class="font-didone text-3xl md:text-4xl lg:text-5xl leading-relaxed">
-            <!-- The riddle stanzas will be injected here by JavaScript -->
-        </div>
-
-        <!-- Interactive Guessing Area -->
-        <div id="guess-area" class="mt-16 opacity-0 invisible">
-            <input type="text" id="guess-input" class="riddle-input font-didone text-2xl w-full max-w-sm p-3 text-center rounded-lg" placeholder="Speak thy word...">
-            <button id="guess-button" class="riddle-button text-lg uppercase tracking-widest font-semibold px-8 py-3 mt-6 rounded-lg">Answer</button>
-        </div>
-    </main>
-    
-    <!-- Feedback Message Box -->
-    <div id="message-box" class="fixed top-0 left-0 w-full h-full bg-black bg-opacity-70 flex items-center justify-center opacity-0 invisible transition-opacity duration-500 z-50">
-        <div id="message-content" class="bg-[#1D1D1D] border border-[#313131] p-8 rounded-lg shadow-2xl text-center max-w-md">
-            <p id="message-text" class="text-2xl font-didone"></p>
-            <button id="close-message" class="riddle-button text-sm uppercase tracking-widest font-semibold px-6 py-2 mt-6 rounded-lg">Close</button>
-        </div>
+  <!-- Bottom UI -->
+  <div class="ui">
+    <div id="log">Welcome. Drag to rotate the box. Click a face to zoom.</div>
+    <div style="display:flex; align-items:center">
+      <button class="nav" id="prevFace" aria-label="Previous face">◀</button>
+      <button class="nav" id="nextFace" aria-label="Next face">▶</button>
+      <div class="spacer"></div>
+      <button id="hintBtn" aria-label="Hint">Hint</button>
+      <button id="musicBtn" aria-label="Music">♫</button>
     </div>
+    <div id="inventory" aria-label="Inventory" role="listbox"></div>
+    <div class="hud" id="hud"></div>
+  </div>
 
-    <!-- GSAP Animation Library -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+  <audio id="bgm" src="background.mp3" loop></audio>
+</div>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            // --- DATA ---
-            const riddleStanzas = [
-                `From the silence, darkly spoken,<br>
-                 Threads of riddles left unbroken,<br>
-                 Every word a cryptic token,<br>
-                 From the night’s plutonian shore.`,
-                
-                `Came a fowl vis’tor tapping,<br>
-                 On your thoughts its talons rapping,<br>
-                 Challenger to your mind mapping<br>
-                 Name this bird of myth, and lore.<br>
-                 Till you answer nothing more.`,
+<script>
+/* ----------------------- Core camera / faces ----------------------- */
+const cube = document.getElementById('cube');
+const panel = document.getElementById('panel');
+const overlay = document.getElementById('overlay');
+const backBtn = document.getElementById('backBtn');
+const logEl = document.getElementById('log');
+const hud = document.getElementById('hud');
 
-                `“Tell me, dreamer, tell me, guesser,<br>
-                 Dare you name this dark confessor?<br>
-                 Mark the sound of your addressor<br>
-                 Bound in poems evermore.`,
+const faces = ['front','right','back','left','top','bottom'];
+let rotY = 0, rotX = 0, dragging=false, sx=0, sy=0;
+let currentFaceIndex = 0;
 
-                `Sit you now, engage in guessing,<br>
-                 Not one more syllable expressed in—<br>
-                 Name in repetend is dressed in<br>
-                 What’s the word my beak’s caressing,<br>
-                 Say the name I hunger for?<br>
-                 My name is not, nevermore.`
-            ];
-            const correctAnswer = "Quothe";
+function updateCube(){
+  cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
+  hud.textContent = faces[currentFaceIndex].toUpperCase();
+}
+updateCube();
 
-            // --- UI ELEMENTS ---
-            const loader = document.getElementById('loader');
-            const feather = loader.querySelector('.feather');
-            const content = document.getElementById('content');
-            const riddleTextContainer = document.getElementById('riddle-text');
-            const guessArea = document.getElementById('guess-area');
-            const guessInput = document.getElementById('guess-input');
-            const guessButton = document.getElementById('guess-button');
-            const messageBox = document.getElementById('message-box');
-            const messageText = document.getElementById('message-text');
-            const closeMessageButton = document.getElementById('close-message');
+function setFaceByIndex(idx){
+  currentFaceIndex = (idx+faces.length)%faces.length;
+  const f = faces[currentFaceIndex];
+  if (f==='front') {rotX=0;rotY=0}
+  if (f==='right') {rotX=0;rotY=-90}
+  if (f==='back') {rotX=0;rotY=180}
+  if (f==='left') {rotX=0;rotY=90}
+  if (f==='top') {rotX=-90;rotY=0}
+  if (f==='bottom') {rotX=90;rotY=0}
+  updateCube();
+}
+document.getElementById('prevFace').onclick=()=>setFaceByIndex(currentFaceIndex-1);
+document.getElementById('nextFace').onclick=()=>setFaceByIndex(currentFaceIndex+1);
 
-            // --- ANIMATION & LOGIC ---
+cube.addEventListener('mousedown',e=>{ dragging=true; sx=e.clientX; sy=e.clientY; });
+window.addEventListener('mouseup',()=>dragging=false);
+window.addEventListener('mousemove',e=>{
+  if(!dragging) return;
+  rotY += (e.clientX - sx)*0.2;
+  rotX -= (e.clientY - sy)*0.2;
+  sx=e.clientX; sy=e.clientY;
+  // update face index from rotY/rotX for hud
+  const faceAngles = {front:[0,0], right:[0,-90], back:[0,180], left:[0,90], top:[-90,0], bottom:[90,0]};
+  // pick closest
+  let min=1e9, idx=0, i=0;
+  for (const k of faces){
+    const [tx,ty] = faceAngles[k]; const d=(tx-rotX)**2+(ty-rotY)**2; if(d<min){min=d; idx=i}
+    i++;
+  }
+  currentFaceIndex = idx;
+  updateCube();
+});
 
-            /**
-             * Initializes the entire experience, from loading animation to riddle reveal.
-             * This function acts as the main orchestrator.
-             */
-            function initializeExperience() {
-                playLoadingAnimation();
-            }
+document.querySelectorAll('.hot').forEach(h=>{
+  h.addEventListener('click',()=>openPuzzle(h.dataset.open));
+});
 
-            /**
-             * Plays the initial "drifting feather" loading animation.
-             * On completion, it fades out the loader and starts the main content animation.
-             */
-            function playLoadingAnimation() {
-                const tl = gsap.timeline();
-                tl.to(feather, { 
-                    duration: 3, 
-                    y: '150vh', 
-                    rotation: 720, 
-                    opacity: 1, 
-                    ease: 'power1.in' 
-                })
-                .to(loader, { 
-                    duration: 1, 
-                    opacity: 0, 
-                    onComplete: () => {
-                        loader.style.display = 'none';
-                        document.body.style.overflow = 'auto'; // Allow scrolling
-                        revealRiddle();
-                    }
-                }, "-=0.5");
-            }
+/* ----------------------- Inventory ----------------------- */
+const inventoryEl = document.getElementById('inventory');
+let armedItem = null;
+const state = {
+  inventory: [],
+  flags:{p1:false,p2:false,p3:false,p4:false,p5:false,p6:false,p7:false},
+  lensesPlaced:false,
+};
+function addItem(id, label){
+  if (state.inventory.includes(id)) return;
+  state.inventory.push(id);
+  const btn = document.createElement('button');
+  btn.className = 'item'; btn.dataset.item=id; btn.setAttribute('aria-label',label||id);
+  btn.textContent = label||id;
+  btn.onclick=()=>{
+    document.querySelectorAll('.item').forEach(e=>e.classList.remove('armed'));
+    if(armedItem===id){armedItem=null; log('Put away '+label); return;}
+    armedItem=id; btn.classList.add('armed'); log('Holding '+label);
+  }
+  inventoryEl.appendChild(btn);
+}
+function has(id){ return state.inventory.includes(id); }
 
-            /**
-             * Reveals the riddle stanza by stanza using a staggered animation.
-             * This is the core "scrollytelling" mechanic, executed automatically here for flow.
-             * It uses a GSAP timeline to sequence the appearance of each part of the poem.
-             */
-            function revealRiddle() {
-                // Populate the container with stanza elements
-                riddleStanzas.forEach((stanza, index) => {
-                    const stanzaEl = document.createElement('p');
-                    stanzaEl.innerHTML = stanza;
-                    stanzaEl.className = 'stanza opacity-0';
-                    stanzaEl.dataset.index = index;
-                    if(index < riddleStanzas.length -1) {
-                        stanzaEl.classList.add('mb-12');
-                    }
-                    riddleTextContainer.appendChild(stanzaEl);
-                });
+/* ----------------------- Hints / Audio ----------------------- */
+const hintMap = {
+  p1:"“Totems watch the sky and sea.”",
+  p2:"Gold → Teal → Crimson; mirrors remember angles.",
+  p3:"New → First → Full → Last — what numbers hide below?",
+  p4:"The bats’ path returns to where it began.",
+  p5:"Set Flower over H; read the oath.",
+  p6:"Bind the oath: D R I N K T H E D A W N.",
+  p7:"Petals answer colors; veins must align."
+};
+let lastPanel = null;
+document.getElementById('hintBtn').onclick=()=>{ if(lastPanel) log(hintMap[lastPanel]); };
+const bgm = document.getElementById('bgm');
+document.getElementById('musicBtn').onclick=()=>{ if(bgm.paused) bgm.play(); else bgm.pause(); };
 
-                const tl = gsap.timeline();
-                tl.to(content, { duration: 1, opacity: 1 })
-                  .to('.stanza', {
-                    duration: 2.5,
-                    opacity: 1,
-                    stagger: 3, // Time between each stanza's animation
-                    ease: 'power2.inOut'
-                }, "+=1")
-                .to(guessArea, {
-                    duration: 1.5,
-                    opacity: 1,
-                    autoAlpha: 1, // Fades in and sets visibility
-                    ease: 'power2.out'
-                }, "-=1");
-            }
-            
-            /**
-             * Checks the user's submitted answer against the correct one.
-             * Triggers success or failure feedback.
-             */
-            function checkAnswer() {
-                const userAnswer = guessInput.value.trim();
-                if (userAnswer.toLowerCase() === correctAnswer.toLowerCase()) {
-                    showFeedback(`Indeed. The word that haunts the silence is... "${correctAnswer}".`, true);
-                } else {
-                    showFeedback("That is not the word whispered on the bleak winds. Try again.", false);
-                    playGlitchAnimation();
-                }
-            }
+/* ----------------------- Overlay plumbing ----------------------- */
+function openOverlay(){ overlay.classList.add('active'); overlay.setAttribute('aria-hidden','false'); backBtn.hidden=false; }
+function closeOverlay(){ overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true'); backBtn.hidden=true; panel.innerHTML=''; }
+backBtn.onclick=closeOverlay;
 
-            /**
-             * Displays the feedback modal with a custom message.
-             * @param {string} text - The message to display.
-             * @param {boolean} isCorrect - If the answer was correct.
-             */
-            function showFeedback(text, isCorrect) {
-                messageText.textContent = text;
-                messageBox.classList.remove('invisible');
-                gsap.to(messageBox, { duration: 0.5, opacity: 1 });
-            }
+function log(msg){ logEl.textContent = msg; }
 
-            /**
-             * Hides the feedback modal.
-             */
-            function hideFeedback() {
-                gsap.to(messageBox, { 
-                    duration: 0.5, 
-                    opacity: 0,
-                    onComplete: () => messageBox.classList.add('invisible')
-                });
-            }
-            
-            /**
-             * Plays a "glitch" animation on the riddle text.
-             * This is a key thematic animation, representing the narrator's unstable mind
-             * upon hearing an incorrect answer. It quickly shifts text properties.
-             */
-            function playGlitchAnimation() {
-                gsap.to('.stanza', {
-                    duration: 0.1,
-                    skewX: 'random(-5, 5)',
-                    opacity: 'random(0.5, 1)',
-                    repeat: 3,
-                    yoyo: true,
-                    ease: 'power4.inOut'
-                });
-            }
+/* =================================================================
+   P1 — Tiki Totem Lock (front)  [solution: moon, wave, fang, hibiscus]
+   ================================================================= */
+const SYMBOLS = ['MOON','BAT','HIBISCUS','TORCH','COCONUT','FANG','WAVE'];
+const p1 = {heads:[0,0,0,0], solution:['MOON','WAVE','FANG','HIBISCUS']};
+function renderP1(){
+  lastPanel='p1'; openOverlay();
+  panel.innerHTML=`
+    <h3>Totem Lock</h3>
+    <div class="row" id="totemRow"></div>
+    <p>Click each head to cycle glyphs. Set the four from top to bottom correctly.</p>`;
+  const row = document.getElementById('totemRow');
+  p1.heads.forEach((v,i)=>{
+    const b = document.createElement('button'); b.className='glyph'; updateGlyph(b, i);
+    b.onclick=()=>{ p1.heads[i]=(p1.heads[i]+1)%7; updateGlyph(b,i); checkP1(); };
+    row.appendChild(b);
+  });
+  function updateGlyph(btn, i){
+    const sym = SYMBOLS[p1.heads[i]];
+    btn.textContent = sym[0]; btn.title=sym;
+    btn.classList.toggle('good', sym===p1.solution[i]);
+  }
+}
+function checkP1(){
+  const ok = p1.heads.every((v,i)=>SYMBOLS[v]===p1.solution[i]);
+  if(ok){
+    state.flags.p1=true;
+    addItem('lens','Obsidian Lens');
+    log('A hatch opens. You take an Obsidian Lens and a rune plate (Gold → Teal → Crimson).');
+    closeOverlay();
+  }
+}
 
-            // --- EVENT LISTENERS ---
-            guessButton.addEventListener('click', checkAnswer);
-            guessInput.addEventListener('keyup', (event) => {
-                if (event.key === 'Enter') {
-                    checkAnswer();
-                }
-            });
-            closeMessageButton.addEventListener('click', hideFeedback);
+/* =================================================================
+   P2 — Sunbeam Prism (top) [A=315, B=180, C=45] with lens
+   ================================================================= */
+const p2 = {A:0,B:0,C:0, target:{A:315,B:180,C:45}, placed:false};
+function renderP2(){
+  lastPanel='p2'; openOverlay();
+  const active = has('lens');
+  panel.innerHTML = `
+    <h3>Sunbeam Prism</h3>
+    <p>${active? 'Place the lens, then rotate mirrors A–C so the beam hits Gold → Teal → Crimson.' :
+      'You need a lens. (Tip: it may be hiding in the totem.)'}</p>
+    <div class="row" id="p2row"></div>
+    <div class="row">
+      <button id="placeLens"${(!active||p2.placed)?' disabled':''}>Insert Obsidian Lens</button>
+    </div>`;
+  const row = document.getElementById('p2row');
+  ['A','B','C'].forEach(id=>{
+    const m = document.createElement('button'); m.className='mirror'; m.dataset.id=id; m.dataset.deg=p2[id];
+    m.onclick=()=>{ if(!p2.placed) return log('The socket is empty.'); p2[id] = (p2[id]+45)%360; m.dataset.deg=p2[id]; checkP2(); };
+    const label = document.createElement('div'); label.style.position='absolute'; label.style.bottom='-22px'; label.style.fontSize='12px'; label.textContent=id;
+    m.appendChild(label);
+    row.appendChild(m);
+  });
+  document.getElementById('placeLens').onclick=()=>{
+    if(armedItem==='lens' || has('lens')){ p2.placed=true; state.lensesPlaced=true; log('Lens seated. A thin beam awakens.'); checkP2(); }
+  };
+}
+function checkP2(){
+  if(p2.placed && p2.A===315 && p2.B===180 && p2.C===45){
+    if(!state.flags.p2){
+      state.flags.p2=true;
+      addItem('fangKey','Bat Fang Key');
+      addItem('tideChip','Tide Chip');
+      log('Crimson window flips. You obtain a Bat Fang Key and a Tide Chip.');
+      closeOverlay();
+    }
+  }
+}
 
-            // --- START THE EXPERIENCE ---
-            initializeExperience();
-        });
-    </script>
+/* =================================================================
+   P3 — Blood Tide Calendar (right)  [dials: new, first, full, last → code 0628]
+   ================================================================= */
+const PHASES = ['new','waxing','first','waxGib','full','waneGib','last','wane'];
+const p3 = { dials:[0,0,0,0], solution:[0,2,4,6], code:'0628', unlocked:false };
+function renderP3(){
+  lastPanel='p3'; openOverlay();
+  const locked = !has('tideChip');
+  panel.innerHTML = `
+    <h3>Blood Tide Calendar</h3>
+    <p>${locked?'There is a coin slot. (Looks like a Tide Chip would fit.)':'Set the moon phases. A number appears beneath each window.'}</p>
+    <div class="row" id="dials"></div>
+    <div class="row"><input id="code" maxlength="4" size="6" placeholder="----" disabled>
+      <button id="enterBtn" disabled>Enter</button></div>`;
+  const dials = document.getElementById('dials');
+  for(let i=0;i<4;i++){
+    const b = document.createElement('button'); b.className='dial'; b.dataset.i=i;
+    const s = document.createElement('span'); s.textContent=PHASES[p3.dials[i]];
+    b.appendChild(s);
+    b.onclick=()=>{ if(locked) return log('The dials are locked.'); p3.dials[i]=(p3.dials[i]+1)%8; s.textContent=PHASES[p3.dials[i]]; checkP3(); };
+    dials.appendChild(b);
+  }
+  function enableCode(){
+    const code = p3.code;
+    const inp = document.getElementById('code');
+    const btn = document.getElementById('enterBtn');
+    inp.disabled=false; btn.disabled=false;
+    btn.onclick=()=>{
+      if(inp.value===code){
+        state.flags.p3=true; addItem('drumsticks','Drumsticks'); log('Drawer opens. Drumsticks and a second rune strip slide out.'); closeOverlay();
+      } else { log('The lock shudders and stays closed.'); }
+    }
+  }
+  function checkP3(){ // when solved, reveal digits and enable code
+    const good = p3.dials.every((v,i)=>v===p3.solution[i]);
+    if(good){ enableCode(); log('Digits glow: 0 6 2 8. Enter them in the lock.'); }
+  }
+}
+
+/* =================================================================
+   P4 — Coconut Drum Rhythm (left)  [seq: 1,3,2,4,4,2,3,1]
+   ================================================================= */
+const p4 = { seq:[1,3,2,4,4,2,3,1], progress:0, armed:false };
+function renderP4(){
+  lastPanel='p4'; openOverlay();
+  panel.innerHTML=`
+    <h3>Coconut Drums</h3>
+    <p>Hold the Drumsticks from inventory, then play the rhythm.</p>
+    <div class="row" id="drums"></div>`;
+  const row=document.getElementById('drums');
+  for(let i=1;i<=4;i++){
+    const d=document.createElement('button'); d.className='drum'; d.textContent=i;
+    d.onclick=()=>hitDrum(i);
+    row.appendChild(d);
+  }
+}
+function hitDrum(i){
+  if(!has('drumsticks')){ log('You need Drumsticks.'); return; }
+  if(p4.seq[p4.progress]===i){
+    p4.progress++;
+    if(p4.progress===p4.seq.length){
+      state.flags.p4=true; addItem('conch','Conch Shell'); addItem('salt','Silvered Salt');
+      p4.progress=0; log('A woven flap drops open. You take a Conch Shell and Silvered Salt.'); closeOverlay();
+    } else { log('Beat '+p4.progress+' / '+p4.seq.length); }
+  } else {
+    p4.progress=0; log('The rhythm falters. Start again.');
+  }
+}
+
+/* =================================================================
+   P5 — Blood Oath Cipher Wheel (back)
+   Align Flower ↔ H, then accept phrase DRINK THE DAWN
+   ================================================================= */
+const p5 = { aligned:false, phrase:'' };
+function renderP5(){
+  lastPanel='p5'; openOverlay();
+  const canUse = has('fangKey');
+  panel.innerHTML = `
+    <h3>Blood Oath Cipher Wheel</h3>
+    <div class="wheel" aria-label="Cipher wheel">
+      <div class="ring outer"></div>
+      <div class="ring inner"></div>
+      <div class="mark"></div>
+      <div class="keyhole"><button id="alignBtn"${canUse?'':' disabled'}>Insert Fang & Align Flower ↔ H</button></div>
+    </div>
+    <div class="row"><input id="phrase" size="20" placeholder="decoded phrase" disabled>
+    <button id="submitPhrase" disabled>Unlock</button></div>
+    <p>${canUse?'':'The central keyhole is empty. (A fang-shaped key would help.)'}</p>`;
+  document.getElementById('alignBtn').onclick=()=>{
+    p5.aligned=true;
+    document.getElementById('phrase').disabled=false;
+    document.getElementById('submitPhrase').disabled=false;
+    log('Rings click into place (Flower over H). Twelve windows glow.');
+  };
+  document.getElementById('submitPhrase').onclick=()=>{
+    const v=document.getElementById('phrase').value.replace(/\s+/g,'').toUpperCase();
+    if(!p5.aligned) return;
+    if(v==='DRINKTHEDAWN'){
+      state.flags.p5=true; log('A latch clicks; a braided panel underneath loosens.'); closeOverlay();
+    } else log('The wheel hisses; that vow is wrong.');
+  };
+}
+
+/* =================================================================
+   P6 — Tapa Knot Lock (bottom)  [node order: 4,6,9,2,11,8,8,5,4,1,11,2]
+   ================================================================= */
+const p6 = { seq:[4,6,9,2,11,8,8,5,4,1,11,2], clicks:[], points:[] };
+function renderP6(){
+  lastPanel='p6'; openOverlay();
+  if(!state.flags.p5){ panel.innerHTML='<h3>Tapa Knot</h3><p>The plaque reads: “Bind the oath.” Something above must be done first.</p>'; return; }
+  panel.innerHTML=`
+    <h3>Tapa Knot</h3>
+    <div class="tapa" id="tapa">
+      <svg class="rope" viewBox="0 0 100 100"><path id="ropePath" d=""></path></svg>
+      <div class="nodes" id="nodes"></div>
+    </div>
+    <div class="row"><button id="resetKnot">Reset</button><button id="submitKnot" disabled>Tighten</button></div>`;
+  const nodesEl = document.getElementById('nodes');
+  const R = 44, cx=50, cy=50;
+  // place 12 nodes around circle
+  for(let n=1;n<=12;n++){
+    const ang = (Math.PI*2)*(n-1)/12 - Math.PI/2;
+    const x = cx + R*Math.cos(ang), y = cy + R*Math.sin(ang);
+    const d = document.createElement('div'); d.className='node'; d.textContent=n;
+    d.style.left = `calc(${x}% - 13px)`; d.style.top = `calc(${y}% - 13px)`;
+    d.dataset.idx=n;
+    d.onclick=()=>chooseNode(n);
+    nodesEl.appendChild(d);
+  }
+  const path = document.getElementById('ropePath');
+  function chooseNode(n){
+    p6.clicks.push(n);
+    if(p6.clicks.length===p6.seq.length) document.getElementById('submitKnot').disabled=false;
+    draw();
+  }
+  document.getElementById('resetKnot').onclick=()=>{ p6.clicks=[]; draw(); document.getElementById('submitKnot').disabled=true; };
+  document.getElementById('submitKnot').onclick=()=>{
+    if(p6.clicks.join(',')===p6.seq.join(',')){
+      state.flags.p6=true; addItem('petalPlate','Petal Order Plate'); addItem('obsidianKey','Obsidian Key Stem');
+      log('The mat tightens; a wooden slide lifts. You take a Petal Order Plate and the Obsidian Key Stem.'); closeOverlay();
+    } else {
+      log('The weave loosens—the stitch is wrong.'); p6.clicks=[];
+      draw(); document.getElementById('submitKnot').disabled=true;
+    }
+  };
+  function draw(){
+    const nodes = [...document.querySelectorAll('.node')];
+    nodes.forEach(n=>n.classList.remove('active'));
+    let d = '';
+    p6.clicks.forEach((n,i)=>{
+      const node = nodes[n-1];
+      node.classList.add('active');
+      const rect = node.getBoundingClientRect();
+    });
+    // Build path from node positions in panel space
+    const box = nodesEl.getBoundingClientRect();
+    p6.points = p6.clicks.map(n=>{
+      const node = nodes[n-1];
+      const r = node.getBoundingClientRect();
+      const x = ((r.left + r.width/2) - box.left)/box.width*100;
+      const y = ((r.top + r.height/2) - box.top)/box.height*100;
+      return [x,y];
+    });
+    p6.points.forEach((pt,i)=>{ d += (i? ' L':'M') + pt[0].toFixed(2)+','+pt[1].toFixed(2); });
+    path.setAttribute('d', d);
+  }
+}
+
+/* =================================================================
+   P7 — Obsidian Hibiscus Bloom (final): insert key, press petals with ring angles.
+   Sequence: (0°,3) → (60°,1) → (180°,4) → (180°,3) → (300°,5) → (0°,6)
+   ================================================================= */
+const p7 = { seq:[{petal:3,deg:0},{petal:1,deg:60},{petal:4,deg:180},{petal:3,deg:180},{petal:5,deg:300},{petal:6,deg:0}],
+             step:0, ring:0, key:false };
+function renderP7(){
+  lastPanel='p7'; openOverlay();
+  panel.innerHTML=`
+    <h3>Obsidian Hibiscus Bloom</h3>
+    <div class="hibiscus">
+      <div class="ring6" id="ring6"><div class="ringLabel">${p7.ring}°</div></div>
+      <button class="petal p1 clr-gold" data-i="1">Sun</button>
+      <button class="petal p2 clr-indigo" data-i="2">Moon</button>
+      <button class="petal p3 clr-teal" data-i="3">Wave</button>
+      <button class="petal p4 clr-crimson" data-i="4">Fang</button>
+      <button class="petal p5 clr-indigo" data-i="5">Moon</button>
+      <button class="petal p6 clr-gold" data-i="6">Sun</button>
+    </div>
+    <div class="row">
+      <button id="insertKey"${has('obsidianKey')?'':' disabled'}>${p7.key?'Key Inserted':'Insert Obsidian Key'}</button>
+      <button id="rot0">Ring 0°</button>
+      <button id="rot60">60°</button>
+      <button id="rot120">120°</button>
+      <button id="rot180">180°</button>
+      <button id="rot240">240°</button>
+      <button id="rot300">300°</button>
+    </div>
+    <div class="row" id="finalRow"></div>`;
+  document.getElementById('insertKey').onclick=()=>{ p7.key=true; log('The key seats with a comforting click.'); };
+  ['rot0','rot60','rot120','rot180','rot240','rot300'].forEach(id=>{
+    document.getElementById(id).onclick=()=>{ p7.ring = parseInt(id.replace('rot','')); document.getElementById('ring6').style.transform=`rotate(${p7.ring}deg)`; document.querySelector('.ringLabel').textContent=p7.ring+'°'; };
+  });
+  panel.querySelectorAll('.petal').forEach(b=>b.onclick=()=>pressPetal(+b.dataset.i));
+}
+function pressPetal(i){
+  const step = p7.seq[p7.step];
+  if(!p7.key){ log('Nothing engages—the center needs a key.'); return; }
+  if (i===step.petal && p7.ring===step.deg){
+    p7.step++;
+    log(`Petal ${i} accepts (${p7.step}/${p7.seq.length}).`);
+    if (p7.step===p7.seq.length) openFinal();
+  } else {
+    p7.step=0; log('Veins misalign; the rosette resets.');
+  }
+}
+function openFinal(){
+  state.flags.p7=true; closeOverlay();
+  // show the artifact hovering above the box
+  const img = new Image(); img.src='artifact.png'; img.alt='Obsidian Hibiscus Flower'; img.style.position='absolute';
+  img.style.width='220px'; img.style.left='50%'; img.style.top='22%'; img.style.transform='translate(-50%, -50%)';
+  img.style.filter='drop-shadow(0 40px 80px rgba(255,255,255,.25))';
+  document.getElementById('scene').appendChild(img);
+  log('The top cap irises open; the Obsidian Hibiscus rises, faintly shimmering.');
+}
+
+/* ----------------------- Router ----------------------- */
+function openPuzzle(id){
+  if(id==='p1') renderP1();
+  if(id==='p2') { if(!state.flags.p1){ log('The top face hums quietly. Something from the front might fit here.'); return; } renderP2(); }
+  if(id==='p3') { renderP3(); }
+  if(id==='p4') { if(!state.flags.p3){ log('The drumheads are silent. Perhaps a gift from the tides first.'); return; } renderP4(); }
+  if(id==='p5') { renderP5(); }
+  if(id==='p6') { renderP6(); }
+  if(id==='p7') { renderP7(); }
+}
+
+/* ----------------------- Keyboard helpers ----------------------- */
+document.addEventListener('keydown',e=>{
+  if(e.key==='ArrowLeft') setFaceByIndex(currentFaceIndex-1);
+  if(e.key==='ArrowRight') setFaceByIndex(currentFaceIndex+1);
+  if(e.key==='Escape' && overlay.classList.contains('active')) closeOverlay();
+});
+
+/* boot */
+setFaceByIndex(0);
+</script>
 </body>
 </html>
