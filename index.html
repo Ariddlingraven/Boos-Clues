@@ -406,31 +406,31 @@ function renderP0(){
   const msg=document.getElementById('p0msg');
   const box=document.getElementById('batbox');
 
-  const onBatClick = (e)=>{
-    if (!e.target.closest('#batImg')) return;
-    try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
-    void bat.offsetHeight;
-    bat.classList.add('slide');
+  const onBatClick = ()=>{
+  try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+  // ensure the transition will fire
+  void bat.offsetHeight;
+  bat.classList.add('slide');
 
-    let revealed=false;
-    const reveal=()=>{
-      if(revealed) return; revealed=true;
-      needle.classList.add('visible');
-      msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
-      placeTip(); zone.classList.add('on');
-    };
-    const onEnd=(ev)=>{
-      if(ev && ev.propertyName && ev.propertyName!=='transform') return;
-      box.removeEventListener('click', onBatClick);
-      bat.removeEventListener('transitionend', onEnd);
-      bat.removeEventListener('webkitTransitionEnd', onEnd);
-      reveal();
-    };
-    bat.addEventListener('transitionend', onEnd, {once:true});
-    bat.addEventListener('webkitTransitionEnd', onEnd, {once:true});
-    setTimeout(reveal, 600);
+  let revealed=false;
+  const reveal=()=>{
+    if(revealed) return; revealed=true;
+    needle.classList.add('visible');
+    msg.textContent='That bar slides away on a well-hidden track, revealing a large needle underneath. Is that dried blood on the tip?';
+    placeTip(); zone.classList.add('on');
   };
-  box.addEventListener('click', onBatClick);
+  const onEnd=(ev)=>{
+    if(ev && ev.propertyName && ev.propertyName!=='transform') return;
+    bat.removeEventListener('transitionend', onEnd);
+    bat.removeEventListener('webkitTransitionEnd', onEnd);
+    reveal();
+  };
+  bat.addEventListener('transitionend', onEnd, {once:true});
+  bat.addEventListener('webkitTransitionEnd', onEnd, {once:true});
+  setTimeout(reveal, 600);
+};
+// Bind directly to the bat element (most robust)
+bat.addEventListener('click', onBatClick, { once:true });
 
   function placeTip(){
     const rectBox=document.getElementById('batbox').getBoundingClientRect();
