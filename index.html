@@ -56,14 +56,15 @@
 
   /* Pre-puzzle view */
   .batbox{ position:relative; width:min(700px,92vw); height:min(420px,68vh); background:#111; border:1px solid #3b3122; border-radius:12px; overflow:hidden; box-shadow:inset 0 0 40px rgba(0,0,0,.55); }
-  .batImg{
-    position:absolute; left:50%; top:50%; width:58%; max-width:560px; aspect-ratio:2.2/1;
-    transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
-    filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)); cursor:pointer;
-    transition:transform .35s ease, opacity .3s ease;
-    will-change: transform;  /* <-- help Safari reliably transition */
-    z-index:2;
-  }
+ .batImg{
+  position:absolute; left:50%; top:50%; width:58%; max-width:560px; aspect-ratio:2.2/1;
+  transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
+  filter:drop-shadow(0 8px 18px rgba(0,0,0,.6));
+  cursor:pointer; pointer-events:auto;          /* <— explicit */
+  transition:transform .35s ease, opacity .3s ease;
+  will-change: transform;
+  z-index:10;                                   /* <— sits above anything in batbox */
+}
   /* slides off to the right */
   .batImg.slide{ transform:translate(160%,-50%); opacity:1; }
 
