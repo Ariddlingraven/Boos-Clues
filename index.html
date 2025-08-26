@@ -61,20 +61,35 @@
     transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
     filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)); cursor:pointer;
     transition:transform .35s ease, opacity .3s ease;
+    z-index:2; /* ensure bat above needle initially */
   }
   /* slides off to the right */
   .batImg.slide{ transform:translate(160%,-50%); opacity:1; }
 
-  .needle{ position:absolute; left:50%; top:50%; width:62%; max-width:640px; aspect-ratio:1.7/1; transform:translate(-50%,-50%); background:url('needle.png') center/contain no-repeat; opacity:0; transition:opacity .35s ease; pointer-events:none; }
+  .needle{
+    position:absolute; left:50%; top:50%; width:62%; max-width:640px; aspect-ratio:1.7/1;
+    transform:translate(-50%,-50%); background:url('needle.png') center/contain no-repeat;
+    opacity:0; transition:opacity .35s ease; pointer-events:none; z-index:1;
+  }
   .needle.visible{ opacity:1; pointer-events:auto; }
 
-  .tipZone{ position:absolute; width:46px; height:46px; border-radius:50%; border:2px dashed rgba(220,180,120,.35); opacity:0; transition:opacity .2s; }
-  .tipZone.on{ opacity:1; }
+  /* --- stacking + pointer-events fix for tip zone --- */
+  .tipZone{
+    position:absolute; width:46px; height:46px; border-radius:50%;
+    border:2px dashed rgba(220,180,120,.35);
+    opacity:0; transition:opacity .2s;
+    pointer-events:none; /* ignore clicks while hidden */
+    z-index:3;           /* above needle once enabled */
+  }
+  .tipZone.on{
+    opacity:1;
+    pointer-events:auto; /* clickable only after reveal */
+  }
   .holdRing{ position:absolute; inset:0; transform:rotate(-90deg); }
   .holdRing circle{ fill:none; stroke:#d9b07c; stroke-width:3; stroke-dasharray:5 7; }
 
   .holdMsg{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); color:#d9b25f; opacity:.9; font-size:.95rem; }
-  .flashRed{ position:absolute; inset:0; background:#550000; opacity:0; transition:opacity .22s ease; }
+  .flashRed{ position:absolute; inset:0; background:#550000; opacity:0; transition:opacity .22s ease; z-index:4; }
 
   /* Toolbar & inventory */
   .ui{ display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; background:linear-gradient(#0a0a0a,#0b0b0b); border-top:1px solid #1c1a15; height:var(--toolbarH); }
@@ -230,15 +245,27 @@ function renderP0(){
   const hmsg=document.getElementById('holdMsg');
   const msg=document.getElementById('p0msg');
 
-  // Slide bat off-screen, then reveal needle
+  // Slide bat off-screen; reveal on transitionend (plus fallback)
   bat.addEventListener('click', ()=>{
     bat.classList.add('slide');
-    bat.addEventListener('transitionend', () => {
+
+    let revealed=false;
+    const reveal=()=>{
+      if(revealed) return;
+      revealed=true;
       needle.classList.add('visible');
-      msg.textContent = 'You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
-      placeTip(); zone.classList.add('on');
-    }, { once:true });
-  }, { once:true });
+      msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
+      placeTip(); zone.classList.add('on'); // pointer-events now active
+    };
+
+    const onEnd=(e)=>{
+      if(e.propertyName && e.propertyName!=='transform') return;
+      bat.removeEventListener('transitionend', onEnd);
+      reveal();
+    };
+    bat.addEventListener('transitionend', onEnd, {once:true});
+    setTimeout(reveal, 450); // fallback in case transitionend doesn't fire
+  }, {once:true});
 
   function placeTip(){
     const box=document.getElementById('batbox').getBoundingClientRect();
