@@ -136,6 +136,15 @@
   height:220px;                   /* taller */
   z-index:6; pointer-events:auto; display:none;
 }
+  /* helper for the collect animation */
+.flyLens{
+  position:fixed;
+  width:120px; height:auto;
+  pointer-events:none;
+  z-index:9999;
+  transform-origin:center center;
+  transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .55s ease;
+}
   /* base lens sizing (prevents huge lens) */
 #lensLoot{
   position:absolute;
@@ -280,6 +289,11 @@ function unlatchDrawerAnimated(){
 
   // animate to lip
   setLip();                         // CSS transition handles the slide
+} // Close the drawer smoothly back in (uses tray's CSS transition)
+function slideDrawerClosed(){
+  measure();                 // ensure trayH is current
+  offset = trayH;            // fully hidden
+  apply();                   // triggers CSS transform transition
 }
 let gY=0, gStart=0, draggingDrawer=false;
 grab.addEventListener('pointerdown', e=>{ grab.setPointerCapture(e.pointerId); draggingDrawer=true; gY=e.clientY; gStart=offset; });
