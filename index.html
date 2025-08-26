@@ -325,7 +325,22 @@ backBtn.onclick=closeOverlay;
 const drawer=document.getElementById('drawer'), tray=document.getElementById('drawerTray'), grab=drawer.querySelector('.grab'), lens=document.getElementById('lensLoot');
 let trayH=180, offset=180; const LIP=8;
 function measure(){ trayH=tray.getBoundingClientRect().height||180; }
-function apply(){ tray.style.transform=`translateY(${offset}px)`; drawer.classList.toggle('open', offset<=2); }
+function slideDrawerClosed(){
+  measure();
+  offset = trayH;    // fully hidden
+  apply();
+
+  // after the CSS transition ends, disable drawer interactions
+  const onEnd = ()=> {
+    tray.removeEventListener('transitionend', onEnd);
+    tray.removeEventListener('webkitTransitionEnd', onEnd);
+    drawer.style.display = 'none';
+    drawer.style.pointerEvents = 'none';
+    drawer.classList.remove('peeking', 'open');
+  };
+  tray.addEventListener('transitionend', onEnd, { once:true });
+  tray.addEventListener('webkitTransitionEnd', onEnd, { once:true });
+}
 function setLip(){ offset=Math.max(0, trayH-LIP); apply(); }
 function setOpen(){ offset=0; apply(); }
 function revealDrawerLip(){
