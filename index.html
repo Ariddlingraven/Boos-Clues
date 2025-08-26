@@ -108,19 +108,17 @@
   .item.icon{ padding:4px; border-radius:6px; display:inline-grid; place-items:center; width:40px; height:40px; }
   .item.icon img{ width:28px; height:28px; display:block; }
 
-  /* magnifier cursor overlay */
-  #cursorLens{
-    position:fixed; left:0; top:0; width:64px; height:64px;
-    transform:translate(-9999px,-9999px);
-    background:url('magnify.png') center/cover no-repeat;
-    clip-path:circle(30px at center); border-radius:50%;
-    pointer-events:none; z-index:9999; filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));
-    display:none;
-  }
+  /* magnifier (real zoom using live clone of the scene) */
   .magnify-on #scene{ cursor:none; }
-  .magnify-on #cursorLens{ display:block; }
+  #magScope{
+    position:fixed; left:0; top:0; width:160px; height:160px; border-radius:50%;
+    overflow:hidden; pointer-events:none; z-index:9999; display:none;
+    box-shadow:0 6px 18px rgba(0,0,0,.6), inset 0 0 0 2px rgba(90,80,60,.6);
+  }
+  .magnify-on #magScope{ display:block; }
+  #magInner{ position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform; }
 
-  /* Drawer (GRAB MOVED INSIDE .tray) */
+  /* Drawer (grab inside tray so it matches visually) */
   #drawer .tray{
     position:absolute; left:0; bottom:0; width:100%; height:100%;
     background:url('inlet.png') center/contain no-repeat;
@@ -128,10 +126,9 @@
     transition: transform .55s ease-out;
     will-change:transform;
   }
-  /* grab follows the tray because it's inside .tray */
   #drawer .tray .grab{ position:absolute; inset:0; background:transparent; cursor:grab; z-index:5; }
   #drawer.dragging .grab{ cursor:grabbing; }
-  #drawer.peeking .grab{ inset:0 0 auto 0; height:70px; } /* lip only */
+  #drawer.peeking .grab{ inset:0 0 auto 0; height:70px; }
   #drawer.open .grab{ pointer-events:none; }
 
   #drawer{
@@ -142,7 +139,6 @@
     z-index:6; pointer-events:auto; display:none;
   }
 
-  /* lens: clickable only when open */
   #lensLoot{
     position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
     width:120px; max-width:38%; height:auto;
@@ -176,7 +172,7 @@
       </div>
     </div>
 
-    <!-- Drawer (grab moved INSIDE tray) -->
+    <!-- Drawer -->
     <div id="drawer" aria-label="Secret drawer">
       <div class="tray" id="drawerTray">
         <div class="grab" aria-hidden="true" title="Drag to open"></div>
@@ -205,7 +201,11 @@
   <audio id="sfxStab"  src="stab.mp3"        preload="auto"></audio>
 
   <div id="screenFlash" aria-hidden="true"></div>
-  <div id="cursorLens" aria-hidden="true"></div>
+
+  <!-- real magnifier -->
+  <div id="magScope"><div id="magInner"></div></div>
+</div>
+
 <script>
 /* ---------- tiny synth ---------- */
 const AC = window.AudioContext || window.webkitAudioContext;
@@ -227,14 +227,14 @@ function slideSfx(){
   src.connect(f); f.connect(g); g.connect(audio.destination); src.start();
 }
 
-/* ------ cube rotation (pointer events; with hotspot gate) ------ */
+/* ------ cube rotation (pointer events; hotspot gate) ------ */
 const cube=document.getElementById('cube'), scene=document.getElementById('scene');
 let rotY=0, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0;
 function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}deg)`; }
 function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
 
 cube.addEventListener('pointerdown', e => {
-  if (e.target.closest('.hot-bat')) return;  // don’t hijack the bat
+  if (e.target.closest('.hot-bat')) return;  // leave bat click alone
   dragging = true;
   if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
   sx = e.clientX; sy = e.clientY;
@@ -245,9 +245,8 @@ window.addEventListener('pointermove',e=>{ if(!dragging) return; const dx=e.clie
 
 scene.addEventListener('mousemove', e=>{ const r=scene.getBoundingClientRect(); cube.style.setProperty('--hx', ((e.clientX-r.left)/r.width*100).toFixed(1)+'%'); cube.style.setProperty('--hy', ((e.clientY-r.top)/r.height*100).toFixed(1)+'%'); });
 
-/* ------ toolbar ------ */
+/* ------ toolbar & inventory ------ */
 const logEl=document.getElementById('log'); function log(t){ logEl.textContent=t; }
-/* inventory */
 const inv = document.getElementById('inventory');
 const inventoryIds = new Set();
 
@@ -259,15 +258,17 @@ function addItem(id, label){
   btn.className = 'item icon';
   btn.setAttribute('aria-label', label || id);
 
-  const img = new Image();
-  img.draggable = false;
+  const img = new Image(); img.draggable = false;
 
   if (id === 'lens'){
     img.src = 'lens.png';
     btn.appendChild(img);
+
+    // toggle magnifier
     btn.addEventListener('click', ()=>{
       const on = document.body.classList.toggle('magnify-on');
       btn.classList.toggle('armed', on);
+      setMagnifier(on);
     });
   } else {
     img.src = 'lens.png';
@@ -277,7 +278,17 @@ function addItem(id, label){
   inv.appendChild(btn);
   sparkle(btn);
 }
-function sparkle(target){ const r=target.getBoundingClientRect(); for(let i=0;i<10;i++){ const s=document.createElement('div'); s.className='spark'; s.style.left=(r.left+r.width/2+(Math.random()-0.5)*40)+'px'; s.style.top=(r.top+r.height/2+(Math.random()-0.5)*20)+'px'; s.style.setProperty('--x',(Math.random()*60-30)+'px'); s.style.setProperty('--y',(Math.random()*-60)+'px'); document.body.appendChild(s); setTimeout(()=>s.remove(),600);} }
+function sparkle(target){
+  const r=target.getBoundingClientRect();
+  for(let i=0;i<10;i++){
+    const s=document.createElement('div'); s.className='spark';
+    s.style.left=(r.left+r.width/2+(Math.random()-0.5)*40)+'px';
+    s.style.top=(r.top+r.height/2+(Math.random()-0.5)*20)+'px';
+    s.style.setProperty('--x',(Math.random()*60-30)+'px');
+    s.style.setProperty('--y',(Math.random()*-60)+'px');
+    document.body.appendChild(s); setTimeout(()=>s.remove(),600);
+  }
+}
 document.getElementById('musicBtn').onclick=()=>{ const a=document.getElementById('bgm'); if(a.paused) a.play(); else a.pause(); };
 document.getElementById('hintBtn').onclick=()=> log('Move the bat aside, then hold steady on the red tip.');
 
@@ -398,33 +409,42 @@ function renderP0(){
   const hmsg=document.getElementById('holdMsg');
   const msg=document.getElementById('p0msg');
 
-  bat.style.zIndex = '20'; bat.style.pointerEvents = 'auto';
+  // If lens is already collected, show needle, disable hold, and show message.
+  const already = inventoryIds.has('lens');
+  if (already) {
+    bat.style.display='none';
+    needle.classList.add('visible');
+    zone.classList.remove('on'); // don't allow holding
+    msg.textContent = "You've already paid the blood burden.";
+  } else {
+    bat.style.zIndex = '20'; bat.style.pointerEvents = 'auto';
 
-  const onBatActivate = (ev)=>{
-    ev.preventDefault(); ev.stopPropagation();
-    try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
-    void bat.offsetHeight;
-    bat.classList.add('slide');
+    const onBatActivate = (ev)=>{
+      ev.preventDefault(); ev.stopPropagation();
+      try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+      void bat.offsetHeight;
+      bat.classList.add('slide');
 
-    let revealed=false;
-    const reveal=()=>{
-      if(revealed) return; revealed=true;
-      needle.classList.add('visible');
-      msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
-      placeTip(); zone.classList.add('on');
+      let revealed=false;
+      const reveal=()=>{
+        if(revealed) return; revealed=true;
+        needle.classList.add('visible');
+        msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
+        placeTip(); zone.classList.add('on');
+      };
+      const onEnd=(e2)=>{
+        if(e2 && e2.propertyName && e2.propertyName!=='transform') return;
+        bat.removeEventListener('transitionend', onEnd);
+        bat.removeEventListener('webkitTransitionEnd', onEnd);
+        reveal();
+      };
+      bat.addEventListener('transitionend', onEnd, { once:true });
+      bat.addEventListener('webkitTransitionEnd', onEnd, { once:true });
+      setTimeout(reveal, 900);
     };
-    const onEnd=(e2)=>{
-      if(e2 && e2.propertyName && e2.propertyName!=='transform') return;
-      bat.removeEventListener('transitionend', onEnd);
-      bat.removeEventListener('webkitTransitionEnd', onEnd);
-      reveal();
-    };
-    bat.addEventListener('transitionend', onEnd, { once:true });
-    bat.addEventListener('webkitTransitionEnd', onEnd, { once:true });
-    setTimeout(reveal, 900);
-  };
-  bat.addEventListener('pointerdown', onBatActivate, { once:true });
-  bat.addEventListener('click',       onBatActivate, { once:true });
+    bat.addEventListener('pointerdown', onBatActivate, { once:true });
+    bat.addEventListener('click',       onBatActivate, { once:true });
+  }
 
   function placeTip(){
     const rectBox=document.getElementById('batbox').getBoundingClientRect();
@@ -450,7 +470,7 @@ function renderP0(){
   function start(){ if(!rafId){ last=0; rafId=requestAnimationFrame(loop);} }
 
   zone.addEventListener('pointerdown', e=>{
-    if(!needle.classList.contains('visible')) return;
+    if(!needle.classList.contains('visible') || already) return;
     zone.setPointerCapture(e.pointerId);
     holding=true; start();
   });
@@ -460,27 +480,69 @@ function renderP0(){
   function success(){
     cancelAnimationFrame(rafId); rafId=null; holding=false; progress=1;
 
-    // Full-screen red + stab
+    // Full red + stab
     screenFlash.style.opacity = 1;
     try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
 
-    // Fade red out, close zoom, then WAIT 3s before drawer pops
+    // Fade red out, close zoom, then WAIT 2s before drawer pops into view
     setTimeout(()=>{
       screenFlash.style.opacity = 0;
       closeOverlay();
       log('Something below slides open…');
-      setTimeout(()=>{ unlatchDrawerAnimated(); }, 3000);  // long pause
-    }, 600); // allow a short moment of full red before fade
+      setTimeout(()=>{ unlatchDrawerAnimated(); }, 2000);  // <-- 2s pause
+    }, 600);
   }
 }
 
-/* floating magnifier follows mouse when toggled */
-const cursorLens = document.getElementById('cursorLens');
+/* --------- Real magnifier (live clone of the scene) --------- */
+const magScope = document.getElementById('magScope');
+const magInner = document.getElementById('magInner');
+const SCALE = 2.25;               // zoom factor
+const R = 80;                      // lens radius (px)
+let magReady = false, sceneRect;
+
+function setMagnifier(on){
+  if (on && !magReady){
+    // Clone the scene once; strip ids so it won't confuse getElementById.
+    const clone = scene.cloneNode(true);
+    clone.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
+    clone.setAttribute('aria-hidden','true');
+    clone.style.pointerEvents = 'none';
+    clone.style.userSelect = 'none';
+    magInner.innerHTML = '';
+    magInner.appendChild(clone);
+    magReady = true;
+    sceneRect = scene.getBoundingClientRect();
+  }
+  if (on){
+    sceneRect = scene.getBoundingClientRect(); // refresh in case layout changed
+  }
+}
+
 window.addEventListener('mousemove', (e)=>{
-  if (!document.body.classList.contains('magnify-on')) return;
-  const x = e.clientX - 32, y = e.clientY - 32;
-  cursorLens.style.transform = `translate(${x}px, ${y}px)`;
+  if (!document.body.classList.contains('magnify-on') || !magReady) return;
+  const x = e.clientX, y = e.clientY;
+  // position scope
+  magScope.style.transform = `translate(${x-R}px, ${y-R}px)`;
+
+  // align the clone so the point under the cursor is centered in the scope
+  const sx = x - sceneRect.left;
+  const sy = y - sceneRect.top;
+  magInner.style.transform = `translate(${-sx*SCALE + R}px, ${-sy*SCALE + R}px) scale(${SCALE})`;
 }, { passive:true });
+
+/* helpers */
+function sparkle(target){
+  const r=target.getBoundingClientRect();
+  for(let i=0;i<10;i++){
+    const s=document.createElement('div'); s.className='spark';
+    s.style.left=(r.left+r.width/2+(Math.random()-0.5)*40)+'px';
+    s.style.top=(r.top+r.height/2+(Math.random()-0.5)*20)+'px';
+    s.style.setProperty('--x',(Math.random()*60-30)+'px');
+    s.style.setProperty('--y',(Math.random()*-60)+'px');
+    document.body.appendChild(s); setTimeout(()=>s.remove(),600);
+  }
+}
 
 /* boot */
 updateCube();
