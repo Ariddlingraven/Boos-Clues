@@ -274,7 +274,39 @@ scene.addEventListener('mousemove', e=>{ const r=scene.getBoundingClientRect(); 
 
 /* ------ toolbar ------ */
 const logEl=document.getElementById('log'); function log(t){ logEl.textContent=t; }
-const inv=document.getElementById('inventory'); function addItem(id,label){ const b=document.createElement('button'); b.className='item'; b.textContent=label||id; inv.appendChild(b); sparkle(b); }
+/* inventory */
+const inv = document.getElementById('inventory');
+const inventoryIds = new Set();
+
+function addItem(id, label){
+  if (inventoryIds.has(id)) return;
+  inventoryIds.add(id);
+
+  const btn = document.createElement('button');
+  btn.className = 'item icon';
+  btn.setAttribute('aria-label', label || id);
+
+  const img = new Image();
+  img.draggable = false;
+
+  if (id === 'lens'){
+    img.src = 'lens.png';
+    btn.appendChild(img);
+
+    // lens acts as a toggle for magnifier cursor
+    btn.addEventListener('click', ()=>{
+      const on = document.body.classList.toggle('magnify-on');
+      btn.classList.toggle('armed', on);
+    });
+  } else {
+    // default icon if needed
+    img.src = 'lens.png';
+    btn.appendChild(img);
+  }
+
+  inv.appendChild(btn);
+  sparkle(btn);
+}
 function sparkle(target){ const r=target.getBoundingClientRect(); for(let i=0;i<10;i++){ const s=document.createElement('div'); s.className='spark'; s.style.left=(r.left+r.width/2+(Math.random()-0.5)*40)+'px'; s.style.top=(r.top+r.height/2+(Math.random()-0.5)*20)+'px'; s.style.setProperty('--x',(Math.random()*60-30)+'px'); s.style.setProperty('--y',(Math.random()*-60)+'px'); document.body.appendChild(s); setTimeout(()=>s.remove(),600);} }
 document.getElementById('musicBtn').onclick=()=>{ const a=document.getElementById('bgm'); if(a.paused) a.play(); else a.pause(); };
 document.getElementById('hintBtn').onclick=()=> log('Move the bat aside, then hold steady on the red tip.');
