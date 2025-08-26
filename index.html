@@ -405,32 +405,51 @@ function renderP0(){
   const hmsg=document.getElementById('holdMsg');
   const msg=document.getElementById('p0msg');
   const box=document.getElementById('batbox');
+// Ensure the bat is unquestionably on top and clickable
+bat.style.zIndex = '20';
+bat.style.pointerEvents = 'auto';
 
-  const onBatClick = ()=>{
+// One true handler; works for both click & pointerdown
+const onBatActivate = (ev)=>{
+  ev.preventDefault();
+  ev.stopPropagation();
+
+  // play the stone-slide sfx
   try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
-  // ensure the transition will fire
+
+  // force a reflow so the transform transition reliably fires
   void bat.offsetHeight;
+
+  // slide the bat away
   bat.classList.add('slide');
 
-  let revealed=false;
-  const reveal=()=>{
-    if(revealed) return; revealed=true;
+  // reveal needle either on transitionend or fallback timeout
+  let revealed = false;
+  const reveal = ()=>{
+    if (revealed) return;
+    revealed = true;
     needle.classList.add('visible');
-    msg.textContent='That bar slides away on a well-hidden track, revealing a large needle underneath. Is that dried blood on the tip?';
-    placeTip(); zone.classList.add('on');
+    msg.textContent = 'You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
+    placeTip();
+    zone.classList.add('on'); // pointer events now live
   };
-  const onEnd=(ev)=>{
-    if(ev && ev.propertyName && ev.propertyName!=='transform') return;
+
+  const onEnd = (e2)=>{
+    if (e2 && e2.propertyName && e2.propertyName !== 'transform') return;
     bat.removeEventListener('transitionend', onEnd);
     bat.removeEventListener('webkitTransitionEnd', onEnd);
     reveal();
   };
-  bat.addEventListener('transitionend', onEnd, {once:true});
-  bat.addEventListener('webkitTransitionEnd', onEnd, {once:true});
-  setTimeout(reveal, 600);
+  bat.addEventListener('transitionend', onEnd, { once:true });
+  bat.addEventListener('webkitTransitionEnd', onEnd, { once:true });
+
+  // safety fallback in case transitionend never fires
+  setTimeout(reveal, 900);
 };
-// Bind directly to the bat element (most robust)
-bat.addEventListener('click', onBatClick, { once:true });
+
+// Bind to both events (whichever arrives first wins)
+bat.addEventListener('pointerdown', onBatActivate, { once:true });
+bat.addEventListener('click',       onBatActivate, { once:true });
 
   function placeTip(){
     const rectBox=document.getElementById('batbox').getBoundingClientRect();
