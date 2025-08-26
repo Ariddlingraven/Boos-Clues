@@ -48,24 +48,23 @@
   .hot-bat:hover{ transform:translateY(-2px); filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
 
   /* Overlay */
-  #overlay{ position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; }
-  #overlay.active{ display:grid; }
+  #overlay{ position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; pointer-events:none; }
+  #overlay.active{ display:grid; pointer-events:auto; }
   .panel{ width:min(940px,95vw); max-height:92vh; overflow:auto; background:linear-gradient(#171511,#0d0c0b); border:1px solid #3b3122; border-radius:14px; padding:20px; color:#e8e0d2; box-shadow:0 30px 80px rgba(0,0,0,.7);}
   .panel h3{margin:.2rem 0 1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase}
   #backBtn{ position:absolute; top:10px; left:10px; z-index:11 }
 
   /* Pre-puzzle view */
   .batbox{ position:relative; width:min(700px,92vw); height:min(420px,68vh); background:#111; border:1px solid #3b3122; border-radius:12px; overflow:hidden; box-shadow:inset 0 0 40px rgba(0,0,0,.55); }
- .batImg{
-  position:absolute; left:50%; top:50%; width:58%; max-width:560px; aspect-ratio:2.2/1;
-  transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
-  filter:drop-shadow(0 8px 18px rgba(0,0,0,.6));
-  cursor:pointer; pointer-events:auto;          /* <— explicit */
-  transition:transform 2s ease, opacity .10s ease;
-  will-change: transform;
-  z-index:5;                                   /* <— sits above anything in batbox */
-}
-  /* slides off to the right */
+  .batImg{
+    position:absolute; left:50%; top:50%; width:58%; max-width:560px; aspect-ratio:2.2/1;
+    transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
+    filter:drop-shadow(0 8px 18px rgba(0,0,0,.6));
+    cursor:pointer; pointer-events:auto;
+    transition:transform 2s ease, opacity .10s ease; /* your slow slide */
+    will-change: transform;
+    z-index:5;
+  }
   .batImg.slide{ transform:translate(160%,-50%); opacity:1; }
 
   .needle{
@@ -75,12 +74,11 @@
   }
   .needle.visible{ opacity:1; pointer-events:auto; }
 
-  /* stacking + pointer fixes */
   .tipZone{
     position:absolute; width:46px; height:46px; border-radius:50%;
     border:2px dashed rgba(220,180,120,.35);
     opacity:0; transition:opacity .2s;
-    pointer-events:none;  /* <-- ignore clicks while hidden */
+    pointer-events:none;
     z-index:3;
   }
   .tipZone.on{ opacity:1; pointer-events:auto; }
@@ -90,15 +88,16 @@
   .holdMsg{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); color:#d9b25f; opacity:.9; font-size:.95rem; }
   .flashRed{
     position:absolute; inset:0; background:#550000; opacity:0; transition:opacity .22s ease;
-    z-index:4; pointer-events:none; /* <-- do NOT block clicks while transparent */
+    z-index:4; pointer-events:none;
   }
-/* Full-screen red flash */
-#screenFlash{
-  position:fixed; inset:0;
-  background:#550000;
-  opacity:0; transition:opacity .28s ease;
-  z-index:9999; pointer-events:none;
-}
+  /* Full-screen red flash */
+  #screenFlash{
+    position:fixed; inset:0;
+    background:#550000;
+    opacity:0; transition:opacity .28s ease;
+    z-index:9999; pointer-events:none;
+  }
+
   /* Toolbar & inventory */
   .ui{ display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; background:linear-gradient(#0a0a0a,#0b0b0b); border-top:1px solid #1c1a15; height:var(--toolbarH); }
   #log{ font-size:.9rem; color:#cbbd9a; opacity:.9; margin-right:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -107,83 +106,57 @@
   .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4; white-space:nowrap;}
   .item.armed{ outline:2px solid var(--accent); }
   .hud{ position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85; z-index:5 }
-/* inventory icon buttons */
-.item.icon{
-  padding:4px;            /* tighter */
-  border-radius:6px;
-  display:inline-grid; place-items:center;
-  width:40px; height:40px;
-}
-.item.icon img{
-  width:28px; height:28px; display:block;
-}
 
-/* magnifier cursor overlay (uses magnify.png but clipped to a circle) */
-#cursorLens{
-  position:fixed; left:0; top:0; width:64px; height:64px;
-  transform:translate(-9999px,-9999px); /* offscreen initially */
-  background:url('magnify.png') center/cover no-repeat;
-  clip-path:circle(30px at center);     /* hide non-transparent corners */
-  border-radius:50%;
-  pointer-events:none; z-index:9999;
-  filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));
-  display:none;
-}
-/* when magnifier is on: hide OS cursor over scene and show lens */
-.magnify-on #scene{ cursor:none; }
-.magnify-on #cursorLens{ display:block; }
-  /* Drawer (hidden until success) */
+  /* inventory icon buttons */
+  .item.icon{ padding:4px; border-radius:6px; display:inline-grid; place-items:center; width:40px; height:40px; }
+  .item.icon img{ width:28px; height:28px; display:block; }
+
+  /* magnifier cursor overlay */
+  #cursorLens{
+    position:fixed; left:0; top:0; width:64px; height:64px;
+    transform:translate(-9999px,-9999px);
+    background:url('magnify.png') center/cover no-repeat;
+    clip-path:circle(30px at center); border-radius:50%;
+    pointer-events:none; z-index:9999; filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));
+    display:none;
+  }
+  .magnify-on #scene{ cursor:none; }
+  .magnify-on #cursorLens{ display:block; }
+
+  /* Drawer */
   #drawer .tray{
-  position:absolute; left:0; bottom:0; width:100%; height:100%;
-  background:url('inlet.png') center/contain no-repeat;
-  transform:translateY(100%);
-  transition: transform .55s ease-out;  /* <— animate the unlatch */
-  will-change:transform;
-}
-.grab{
-  position:absolute;
-  inset:0;                /* full area during drag/open */
-  background:transparent; /* ensure no highlight */
-  cursor:grab;
-  z-index:5;
-}
-#drawer.dragging .grab{ cursor:grabbing; }
-/* when only the lip is peeking, limit grab area to the top strip */
-#drawer.peeking .grab{
-  inset:0 0 auto 0;       /* top edge only */
-  height:70px;            /* grab the lip accurately */
-}
-/* when fully open, let the user click the lens — disable the grab layer */
-#drawer.open .grab{ pointer-events:none; }
- #drawer{
-  position:absolute; left:50%; transform:translateX(-50%);
-  bottom:calc(var(--toolbarH) - 2px);
-  width:min(640px,78vw);          /* wider */
-  height:220px;                   /* taller */
-  z-index:6; pointer-events:auto; display:none;
-}
-  /* helper for the collect animation */
-.flyLens{
-  position:fixed;
-  width:120px; height:auto;
-  pointer-events:none;
-  z-index:9999;
-  transform-origin:center center;
-  transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .55s ease;
-}
-  /* base lens sizing (prevents huge lens) */
-#lensLoot{
-  position:absolute;
-  left:50%; top:46%; transform:translate(-50%,-50%);
-  width:120px;                 /* fixed logical size */
-  max-width:38%;               /* also cap relative to tray width */
-  height:auto;
-  filter:drop-shadow(0 10px 20px rgba(0,0,0,.5));
-  opacity:.25;                 /* faint hint even when closed */
-  transition:opacity .2s;
-  pointer-events:none;
-  z-index:1;                   /* stays under the .grab overlay */
-}
+    position:absolute; left:0; bottom:0; width:100%; height:100%;
+    background:url('inlet.png') center/contain no-repeat;
+    transform:translateY(100%);
+    transition: transform .55s ease-out;
+    will-change:transform;
+  }
+  .grab{
+    position:absolute; inset:0; background:transparent; cursor:grab; z-index:5;
+  }
+  #drawer.dragging .grab{ cursor:grabbing; }
+  #drawer.peeking .grab{ inset:0 0 auto 0; height:70px; }
+  #drawer.open .grab{ pointer-events:none; }
+
+  #drawer{
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:calc(var(--toolbarH) - 2px);
+    width:min(640px,78vw);
+    height:220px;
+    z-index:6; pointer-events:auto; display:none;
+  }
+
+  /* fly-to-inventory */
+  .flyLens{ position:fixed; width:120px; height:auto; pointer-events:none; z-index:9999;
+    transform-origin:center center; transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .55s ease; }
+
+  /* lens in tray */
+  #lensLoot{
+    position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
+    width:120px; max-width:38%; height:auto;
+    filter:drop-shadow(0 10px 20px rgba(0,0,0,.5));
+    opacity:.25; transition:opacity .2s; pointer-events:none; z-index:1;
+  }
 
   /* Sparkles */
   .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
@@ -233,14 +206,11 @@
   <div id="overlay" aria-hidden="true"><div class="panel" id="panel"></div></div>
 
   <audio id="bgm" src="background.mp3" loop></audio>
-  <!-- sfx -->
-<audio id="sfxSlide" src="stoneslide.mp3" preload="auto"></audio>
-<audio id="sfxStab"  src="stab.mp3"        preload="auto"></audio>
+  <audio id="sfxSlide" src="stoneslide.mp3" preload="auto"></audio>
+  <audio id="sfxStab"  src="stab.mp3"        preload="auto"></audio>
 
-<!-- full-screen red flash (covers entire viewport, not just the panel) -->
-<div id="screenFlash" aria-hidden="true"></div>
-<!-- floating magnifier cursor -->
-<div id="cursorLens" aria-hidden="true"></div>
+  <div id="screenFlash" aria-hidden="true"></div>
+  <div id="cursorLens" aria-hidden="true"></div>
 <script>
 /* ---------- tiny synth ---------- */
 const AC = window.AudioContext || window.webkitAudioContext;
@@ -262,14 +232,16 @@ function slideSfx(){
   src.connect(f); f.connect(g); g.connect(audio.destination); src.start();
 }
 
-/* ------ cube rotation (lightweight) ------ */
+/* ------ cube rotation (pointer events; robust) ------ */
 const cube=document.getElementById('cube'), scene=document.getElementById('scene');
 let rotY=0, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0;
 function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}deg)`; }
 function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
-cube.addEventListener('mousedown',e=>{ dragging=true; sx=e.clientX; sy=e.clientY; if(raf){cancelAnimationFrame(raf); raf=null;} });
-window.addEventListener('mouseup',()=>{ if(!dragging) return; dragging=false; lastT=0; raf=requestAnimationFrame(tick); });
-window.addEventListener('mousemove',e=>{ if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy; rotY+=dx*0.25; rotX-=dy*0.25; vy=dx*0.15; vx=-dy*0.15; sx=e.clientX; sy=e.clientY; updateCube(); });
+
+cube.addEventListener('pointerdown',e=>{ dragging=true; cube.setPointerCapture(e.pointerId); sx=e.clientX; sy=e.clientY; if(raf){cancelAnimationFrame(raf); raf=null;} });
+window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false; lastT=0; raf=requestAnimationFrame(tick); });
+window.addEventListener('pointermove',e=>{ if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy; rotY+=dx*0.25; rotX-=dy*0.25; vy=dx*0.15; vx=-dy*0.15; sx=e.clientX; sy=e.clientY; updateCube(); });
+
 scene.addEventListener('mousemove', e=>{ const r=scene.getBoundingClientRect(); cube.style.setProperty('--hx', ((e.clientX-r.left)/r.width*100).toFixed(1)+'%'); cube.style.setProperty('--hy', ((e.clientY-r.top)/r.height*100).toFixed(1)+'%'); });
 
 /* ------ toolbar ------ */
@@ -292,14 +264,11 @@ function addItem(id, label){
   if (id === 'lens'){
     img.src = 'lens.png';
     btn.appendChild(img);
-
-    // lens acts as a toggle for magnifier cursor
     btn.addEventListener('click', ()=>{
       const on = document.body.classList.toggle('magnify-on');
       btn.classList.toggle('armed', on);
     });
   } else {
-    // default icon if needed
     img.src = 'lens.png';
     btn.appendChild(img);
   }
@@ -313,7 +282,6 @@ document.getElementById('hintBtn').onclick=()=> log('Move the bat aside, then ho
 
 /* ------ overlay ------ */
 const overlay=document.getElementById('overlay'), panel=document.getElementById('panel'), backBtn=document.getElementById('backBtn');
-  // new sfx + full-screen flash
 const sfxSlide = document.getElementById('sfxSlide');
 const sfxStab  = document.getElementById('sfxStab');
 const screenFlash = document.getElementById('screenFlash');
@@ -325,12 +293,20 @@ backBtn.onclick=closeOverlay;
 const drawer=document.getElementById('drawer'), tray=document.getElementById('drawerTray'), grab=drawer.querySelector('.grab'), lens=document.getElementById('lensLoot');
 let trayH=180, offset=180; const LIP=8;
 function measure(){ trayH=tray.getBoundingClientRect().height||180; }
+
+/* >>> MISSING EARLIER: core apply() — updates transform & classes <<< */
+function apply(){
+  tray.style.transform = `translateY(${offset}px)`;
+  const fullyOpen = (offset === 0);
+  const peeking   = !fullyOpen && offset < trayH;
+  drawer.classList.toggle('open',   fullyOpen);
+  drawer.classList.toggle('peeking', peeking);
+}
+
 function slideDrawerClosed(){
   measure();
   offset = trayH;    // fully hidden
   apply();
-
-  // after the CSS transition ends, disable drawer interactions
   const onEnd = ()=> {
     tray.removeEventListener('transitionend', onEnd);
     tray.removeEventListener('webkitTransitionEnd', onEnd);
@@ -346,113 +322,64 @@ function setOpen(){ offset=0; apply(); }
 function revealDrawerLip(){
   drawer.style.display='block';
   requestAnimationFrame(()=>{ measure(); setLip(); slideSfx(); });
-}// Smoothly unlatch the drawer from fully hidden → lip, with stoneslide sfx
+}
 function unlatchDrawerAnimated(){
   drawer.style.display = 'block';
-  measure();                        // get trayH
-
-  // start from fully hidden
-  offset = trayH;
-  apply();
-
-  // force a reflow so CSS transition will kick in on the next change
-  void tray.offsetHeight;
-
-  // play the stone-slide sound as it unlatches
-  try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
-
-  // animate to lip
-  setLip();                         // CSS transition handles the slide
-} // Close the drawer smoothly back in (uses tray's CSS transition)
-function slideDrawerClosed()function unlatchDrawerAnimated(){
-  // Make the drawer visible and interactive again
-  drawer.style.display = 'block';
   drawer.style.pointerEvents = 'auto';
-
-  // Make sure we know the current tray height
-  measure();                 // sets trayH
-
-  // Start fully hidden (off-screen)
-  offset = trayH;
-  apply();                   // updates transform + classes
-
-  // Force a reflow so the upcoming transform change will transition
+  measure();
+  offset = trayH; apply();
   void tray.offsetHeight;
-
-  // Play the stone slide sound as it unlatches
   try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+  setLip();
+}
 
-  // Animate up to the "lip" position (peeking)
-  setLip();                  // calls apply(); CSS transition does the motion
-}
-  {
-  measure();                 // ensure trayH is current
-  offset = trayH;            // fully hidden
-  apply();                   // triggers CSS transform transition
-}
+/* drag */
 let gY=0, gStart=0, draggingDrawer=false;
-grab.addEventListener('pointerdown', e=>{ grab.setPointerCapture(e.pointerId); draggingDrawer=true; gY=e.clientY; gStart=offset; });
+grab.addEventListener('pointerdown', e=>{ grab.setPointerCapture(e.pointerId); draggingDrawer=true; gY=e.clientY; gStart=offset; drawer.classList.add('dragging'); });
 grab.addEventListener('pointermove', e=>{ if(!draggingDrawer) return; offset=Math.max(0, Math.min(trayH, gStart + (e.clientY-gY))); apply(); });
-function endDrag(){ draggingDrawer=false; const dClosed=Math.abs(offset-trayH), dLip=Math.abs(offset-Math.max(0,trayH-LIP)), dOpen=Math.abs(offset-0); const m=Math.min(dClosed,dLip,dOpen); if(m===dOpen) setOpen(); else if(m===dLip) setLip(); else {offset=trayH; apply();} }
+function endDrag(){ if(!draggingDrawer) return; draggingDrawer=false; drawer.classList.remove('dragging'); const dClosed=Math.abs(offset-trayH), dLip=Math.abs(offset-Math.max(0,trayH-LIP)), dOpen=Math.abs(offset-0); const m=Math.min(dClosed,dLip,dOpen); if(m===dOpen) setOpen(); else if(m===dLip) setLip(); else {offset=trayH; apply();} }
 grab.addEventListener('pointerup', endDrag); grab.addEventListener('pointercancel', endDrag);
-lens.addEventListener('click', ()=>{ if(offset>2) return; addItem('lens','Obsidian Lens') ; log('You obtained the Obsidian Lens.'); lens.style.pointerEvents='none'; }); lens.addEventListener('click', ()=>{
-  if (offset > 0) return;                 // only when fully open
-  if (lens.dataset.collected === '1') return; // prevent double collects
 
-  // Get start (lens) and end (inventory) positions
+/* lens collect → fly to toolbar then close drawer */
+lens.addEventListener('click', ()=>{
+  if (offset > 0) return;
+  if (lens.dataset.collected === '1') return;
+
   const sr = lens.getBoundingClientRect();
   const invBar = document.getElementById('inventory');
   const er = invBar.getBoundingClientRect();
 
-  // Create a flying clone
   const fly = new Image();
   fly.src = lens.src;
   fly.className = 'flyLens';
-  // Start at lens center
   const startX = sr.left + sr.width/2;
   const startY = sr.top  + sr.height/2;
-  fly.style.left = (startX - 60) + 'px';     // 120px wide -> center
+  fly.style.left = (startX - 60) + 'px';
   fly.style.top  = (startY - 60) + 'px';
   fly.style.opacity = '1';
   fly.style.transform = 'translate(0,0) scale(1)';
   document.body.appendChild(fly);
 
-  // Compute end delta (to somewhere near the left/middle of inventory bar)
-  const endX = er.left + Math.min(120, er.width*0.2); // a little into the bar
+  const endX = er.left + Math.min(120, er.width*0.2);
   const endY = er.top  + er.height/2;
   const dx = endX - startX;
   const dy = endY - startY;
-
-  // Force reflow to ensure transition kicks in
-  // eslint-disable-next-line no-unused-expressions
   fly.offsetHeight;
+  requestAnimationFrame(()=>{ fly.style.transform = `translate(${dx}px, ${dy}px) scale(0.35)`; fly.style.opacity = '0.6'; });
 
-  // Animate toward inventory: shrink and fade a bit
-  requestAnimationFrame(()=>{
-    fly.style.transform = `translate(${dx}px, ${dy}px) scale(0.35)`;
-    fly.style.opacity = '0.6';
-  });
-
-  // When animation ends: grant item, clean up, and close the drawer
   const finish = ()=>{
     fly.removeEventListener('transitionend', finish);
     fly.remove();
-
-    // Mark collected and hide lens inside the tray
     lens.dataset.collected = '1';
     lens.style.opacity = '0';
     lens.style.pointerEvents = 'none';
-
-    // Add to inventory + toast
     addItem('lens','Obsidian Lens');
     log('You obtained the Obsidian Lens.');
-
-    // Slide the drawer back in
     slideDrawerClosed();
   };
   fly.addEventListener('transitionend', finish, { once:true });
 });
-  
+
 /* ------ bat hotspot → pre-puzzle ------ */
 document.getElementById('batHotspot').addEventListener('click', ()=>{ renderP0(); });
 
@@ -475,61 +402,49 @@ function renderP0(){
   const bat=document.getElementById('batImg');
   const needle=document.getElementById('needle');
   const zone=document.getElementById('tipZone');
-  const flash=document.getElementById('flashRed');
   const hmsg=document.getElementById('holdMsg');
   const msg=document.getElementById('p0msg');
   const box=document.getElementById('batbox');
 
-  // Slide bat off-screen; reveal on transitionend (robust, delegated)
-const onBatClick = (e)=>{
-  if (!e.target.closest('#batImg')) return; // play stone-slide sfx as the bat moves
-try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
-// only respond if the bat itself was clicked
+  const onBatClick = (e)=>{
+    if (!e.target.closest('#batImg')) return;
+    try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+    void bat.offsetHeight;
+    bat.classList.add('slide');
 
-  // Force a reflow so the transform transition reliably fires:
-  // (prevents cases where class is added in same frame as element creation)
-  void bat.offsetHeight;
-
-  bat.classList.add('slide');
-
-  let revealed=false;
-  const reveal=()=>{
-    if(revealed) return;
-    revealed=true;
-    needle.classList.add('visible');
-    msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
-    placeTip(); zone.classList.add('on'); // pointer-events now active
+    let revealed=false;
+    const reveal=()=>{
+      if(revealed) return; revealed=true;
+      needle.classList.add('visible');
+      msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
+      placeTip(); zone.classList.add('on');
+    };
+    const onEnd=(ev)=>{
+      if(ev && ev.propertyName && ev.propertyName!=='transform') return;
+      box.removeEventListener('click', onBatClick);
+      bat.removeEventListener('transitionend', onEnd);
+      bat.removeEventListener('webkitTransitionEnd', onEnd);
+      reveal();
+    };
+    bat.addEventListener('transitionend', onEnd, {once:true});
+    bat.addEventListener('webkitTransitionEnd', onEnd, {once:true});
+    setTimeout(reveal, 600);
   };
-
-  const onEnd=(ev)=>{
-    if(ev && ev.propertyName && ev.propertyName!=='transform') return;
-    box.removeEventListener('click', onBatClick);
-    bat.removeEventListener('transitionend', onEnd);
-    bat.removeEventListener('webkitTransitionEnd', onEnd);
-    reveal();
-  };
-
-  bat.addEventListener('transitionend', onEnd, {once:true});
-  bat.addEventListener('webkitTransitionEnd', onEnd, {once:true});
-  setTimeout(reveal, 600); // hard fallback
-};
-
-// Attach once to the container; reliable even if the child’s listener misbehaves
-box.addEventListener('click', onBatClick);
+  box.addEventListener('click', onBatClick);
 
   function placeTip(){
-    const box=document.getElementById('batbox').getBoundingClientRect();
+    const rectBox=document.getElementById('batbox').getBoundingClientRect();
     const nr=needle.getBoundingClientRect();
-    const tipX = nr.left + nr.width*0.26;  // ~25% across (left-pointing tip)
-    const tipY = nr.top  + nr.height*0.65; // centered vertically
-    zone.style.left=(tipX - box.left - 23)+'px';
-    zone.style.top =(tipY - box.top  - 23)+'px';
+    const tipX = nr.left + nr.width*0.26;  /* keep your custom offsets */
+    const tipY = nr.top  + nr.height*0.65;
+    zone.style.left=(tipX - rectBox.left - 23)+'px';
+    zone.style.top =(tipY - rectBox.top  - 23)+'px';
   }
   window.addEventListener('resize', ()=>{ if(needle.classList.contains('visible')) placeTip(); });
 
-  // Hold logic (fill while pressed, drain otherwise)
+  // Hold logic (your timings preserved)
   let progress=0, holding=false, rafId=null, last=0;
-    const FILL_MS=8000, DRAIN_MS=2000;
+  const FILL_MS=8000, DRAIN_MS=2000;
   function loop(ts){
     if(!last) last=ts;
     const dt=ts-last; last=ts;
@@ -551,21 +466,10 @@ box.addEventListener('click', onBatClick);
 
   function success(){
     cancelAnimationFrame(rafId); rafId=null; holding=false; progress=1;
-// full-screen red flash + stab sfx
-screenFlash.style.opacity = 1;
-try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
-
-// small delay while red, then unlatch the drawer with stoneslide sfx
-setTimeout(()=>{
-  unlatchDrawerAnimated();
-}, 220);
-
-// fade the red screen and finish
-setTimeout(()=>{
-  screenFlash.style.opacity = 0;
-  closeOverlay();
-  log('Something below slides open…');
-}, 560);
+    screenFlash.style.opacity = 1;
+    try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
+    setTimeout(()=>{ unlatchDrawerAnimated(); }, 220);
+    setTimeout(()=>{ screenFlash.style.opacity = 0; closeOverlay(); log('Something below slides open…'); }, 560);
   }
 } // end renderP0
 
