@@ -44,6 +44,7 @@
     position:absolute; top:10%; left:10%; width:30%; aspect-ratio:2/1; border-radius:.5rem;
     background:url('batflap.png') center/contain no-repeat;
     filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); cursor:pointer; transition:transform .2s, filter .2s;
+    z-index:9;
   }
   .hot-bat:hover{ transform:translateY(-2px); filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
 
@@ -131,9 +132,7 @@
     transition: transform .55s ease-out;
     will-change:transform;
   }
-  .grab{
-    position:absolute; inset:0; background:transparent; cursor:grab; z-index:5;
-  }
+  .grab{ position:absolute; inset:0; background:transparent; cursor:grab; z-index:5; }
   #drawer.dragging .grab{ cursor:grabbing; }
   #drawer.peeking .grab{ inset:0 0 auto 0; height:70px; }
   #drawer.open .grab{ pointer-events:none; }
@@ -146,17 +145,18 @@
     z-index:6; pointer-events:auto; display:none;
   }
 
-  /* fly-to-inventory */
-  .flyLens{ position:fixed; width:120px; height:auto; pointer-events:none; z-index:9999;
-    transform-origin:center center; transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .55s ease; }
-
-  /* lens in tray */
+  /* lens: fully clickable only when open */
   #lensLoot{
     position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
     width:120px; max-width:38%; height:auto;
     filter:drop-shadow(0 10px 20px rgba(0,0,0,.5));
     opacity:.25; transition:opacity .2s; pointer-events:none; z-index:1;
   }
+  #drawer.open #lensLoot{ opacity:1; pointer-events:auto; cursor:pointer; }
+
+  /* fly-to-inventory */
+  .flyLens{ position:fixed; width:120px; height:auto; pointer-events:none; z-index:9999;
+    transform-origin:center center; transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .55s ease; }
 
   /* Sparkles */
   .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
@@ -232,7 +232,7 @@ function slideSfx(){
   src.connect(f); f.connect(g); g.connect(audio.destination); src.start();
 }
 
-/* ------ cube rotation (pointer events; robust) ------ */
+/* ------ cube rotation (pointer events; with hotspot gate) ------ */
 const cube=document.getElementById('cube'), scene=document.getElementById('scene');
 let rotY=0, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0;
 function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}deg)`; }
@@ -241,7 +241,6 @@ function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=v
 cube.addEventListener('pointerdown', e => {
   // If the press starts on the bat hotspot, let that element handle it.
   if (e.target.closest('.hot-bat')) return;
-
   dragging = true;
   if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
   sx = e.clientX; sy = e.clientY;
@@ -302,7 +301,6 @@ const drawer=document.getElementById('drawer'), tray=document.getElementById('dr
 let trayH=180, offset=180; const LIP=8;
 function measure(){ trayH=tray.getBoundingClientRect().height||180; }
 
-/* >>> MISSING EARLIER: core apply() — updates transform & classes <<< */
 function apply(){
   tray.style.transform = `translateY(${offset}px)`;
   const fullyOpen = (offset === 0);
@@ -327,10 +325,6 @@ function slideDrawerClosed(){
 }
 function setLip(){ offset=Math.max(0, trayH-LIP); apply(); }
 function setOpen(){ offset=0; apply(); }
-function revealDrawerLip(){
-  drawer.style.display='block';
-  requestAnimationFrame(()=>{ measure(); setLip(); slideSfx(); });
-}
 function unlatchDrawerAnimated(){
   drawer.style.display = 'block';
   drawer.style.pointerEvents = 'auto';
@@ -350,7 +344,7 @@ grab.addEventListener('pointerup', endDrag); grab.addEventListener('pointercance
 
 /* lens collect → fly to toolbar then close drawer */
 lens.addEventListener('click', ()=>{
-  if (offset > 0) return;
+  if (offset > 0) return;                   // only when fully open
   if (lens.dataset.collected === '1') return;
 
   const sr = lens.getBoundingClientRect();
@@ -412,57 +406,41 @@ function renderP0(){
   const zone=document.getElementById('tipZone');
   const hmsg=document.getElementById('holdMsg');
   const msg=document.getElementById('p0msg');
-  const box=document.getElementById('batbox');
-// Ensure the bat is unquestionably on top and clickable
-bat.style.zIndex = '20';
-bat.style.pointerEvents = 'auto';
 
-// One true handler; works for both click & pointerdown
-const onBatActivate = (ev)=>{
-  ev.preventDefault();
-  ev.stopPropagation();
+  // make certain it is above everything and clickable
+  bat.style.zIndex = '20';
+  bat.style.pointerEvents = 'auto';
 
-  // play the stone-slide sfx
-  try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+  const onBatActivate = (ev)=>{
+    ev.preventDefault(); ev.stopPropagation();
+    try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+    void bat.offsetHeight;     // reflow
+    bat.classList.add('slide');
 
-  // force a reflow so the transform transition reliably fires
-  void bat.offsetHeight;
-
-  // slide the bat away
-  bat.classList.add('slide');
-
-  // reveal needle either on transitionend or fallback timeout
-  let revealed = false;
-  const reveal = ()=>{
-    if (revealed) return;
-    revealed = true;
-    needle.classList.add('visible');
-    msg.textContent = 'You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
-    placeTip();
-    zone.classList.add('on'); // pointer events now live
+    let revealed = false;
+    const reveal = ()=>{
+      if (revealed) return; revealed = true;
+      needle.classList.add('visible');
+      msg.textContent = 'You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
+      placeTip(); zone.classList.add('on');
+    };
+    const onEnd = (e2)=>{
+      if (e2 && e2.propertyName && e2.propertyName !== 'transform') return;
+      bat.removeEventListener('transitionend', onEnd);
+      bat.removeEventListener('webkitTransitionEnd', onEnd);
+      reveal();
+    };
+    bat.addEventListener('transitionend', onEnd, { once:true });
+    bat.addEventListener('webkitTransitionEnd', onEnd, { once:true });
+    setTimeout(reveal, 900);   // safety fallback
   };
-
-  const onEnd = (e2)=>{
-    if (e2 && e2.propertyName && e2.propertyName !== 'transform') return;
-    bat.removeEventListener('transitionend', onEnd);
-    bat.removeEventListener('webkitTransitionEnd', onEnd);
-    reveal();
-  };
-  bat.addEventListener('transitionend', onEnd, { once:true });
-  bat.addEventListener('webkitTransitionEnd', onEnd, { once:true });
-
-  // safety fallback in case transitionend never fires
-  setTimeout(reveal, 900);
-};
-
-// Bind to both events (whichever arrives first wins)
-bat.addEventListener('pointerdown', onBatActivate, { once:true });
-bat.addEventListener('click',       onBatActivate, { once:true });
+  bat.addEventListener('pointerdown', onBatActivate, { once:true });
+  bat.addEventListener('click',       onBatActivate, { once:true });
 
   function placeTip(){
     const rectBox=document.getElementById('batbox').getBoundingClientRect();
     const nr=needle.getBoundingClientRect();
-    const tipX = nr.left + nr.width*0.26;  /* keep your custom offsets */
+    const tipX = nr.left + nr.width*0.26;  /* your custom offsets */
     const tipY = nr.top  + nr.height*0.65;
     zone.style.left=(tipX - rectBox.left - 23)+'px';
     zone.style.top =(tipY - rectBox.top  - 23)+'px';
@@ -493,12 +471,26 @@ bat.addEventListener('click',       onBatActivate, { once:true });
 
   function success(){
     cancelAnimationFrame(rafId); rafId=null; holding=false; progress=1;
+
+    // full-screen red flash + stab sfx
     screenFlash.style.opacity = 1;
     try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
-    setTimeout(()=>{ unlatchDrawerAnimated(); }, 220);
-    setTimeout(()=>{ screenFlash.style.opacity = 0; closeOverlay(); log('Something below slides open…'); }, 560);
+
+    // "several second" pause, then unlatch & slide sound
+    setTimeout(()=>{ unlatchDrawerAnimated(); }, 1600);
+
+    // fade back & exit zoom
+    setTimeout(()=>{ screenFlash.style.opacity = 0; closeOverlay(); log('Something below slides open…'); }, 2000);
   }
 } // end renderP0
+
+/* floating magnifier follows mouse when toggled */
+const cursorLens = document.getElementById('cursorLens');
+window.addEventListener('mousemove', (e)=>{
+  if (!document.body.classList.contains('magnify-on')) return;
+  const x = e.clientX - 32, y = e.clientY - 32;
+  cursorLens.style.transform = `translate(${x}px, ${y}px)`;
+}, { passive:true });
 
 /* boot */
 updateCube();
