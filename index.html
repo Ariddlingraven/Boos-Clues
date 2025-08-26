@@ -107,7 +107,31 @@
   .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4; white-space:nowrap;}
   .item.armed{ outline:2px solid var(--accent); }
   .hud{ position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85; z-index:5 }
+/* inventory icon buttons */
+.item.icon{
+  padding:4px;            /* tighter */
+  border-radius:6px;
+  display:inline-grid; place-items:center;
+  width:40px; height:40px;
+}
+.item.icon img{
+  width:28px; height:28px; display:block;
+}
 
+/* magnifier cursor overlay (uses magnify.png but clipped to a circle) */
+#cursorLens{
+  position:fixed; left:0; top:0; width:64px; height:64px;
+  transform:translate(-9999px,-9999px); /* offscreen initially */
+  background:url('magnify.png') center/cover no-repeat;
+  clip-path:circle(30px at center);     /* hide non-transparent corners */
+  border-radius:50%;
+  pointer-events:none; z-index:9999;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.6));
+  display:none;
+}
+/* when magnifier is on: hide OS cursor over scene and show lens */
+.magnify-on #scene{ cursor:none; }
+.magnify-on #cursorLens{ display:block; }
   /* Drawer (hidden until success) */
   #drawer .tray{
   position:absolute; left:0; bottom:0; width:100%; height:100%;
@@ -116,19 +140,21 @@
   transition: transform .55s ease-out;  /* <— animate the unlatch */
   will-change:transform;
 }
-  .grab{
-  position:absolute; inset:0;
+.grab{
+  position:absolute;
+  inset:0;                /* full area during drag/open */
+  background:transparent; /* ensure no highlight */
   cursor:grab;
-  z-index:5;                  /* sits above lens so you can always grab */
+  z-index:5;
 }
 #drawer.dragging .grab{ cursor:grabbing; }
+/* when only the lip is peeking, limit grab area to the top strip */
+#drawer.peeking .grab{
+  inset:0 0 auto 0;       /* top edge only */
+  height:70px;            /* grab the lip accurately */
+}
 /* when fully open, let the user click the lens — disable the grab layer */
 #drawer.open .grab{ pointer-events:none; }
-#drawer.open #lensLoot{
-  opacity:1;                /* fully visible when drawer open */
-  pointer-events:auto; 
-  cursor:pointer;
-} 
  #drawer{
   position:absolute; left:50%; transform:translateX(-50%);
   bottom:calc(var(--toolbarH) - 2px);
