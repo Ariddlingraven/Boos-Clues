@@ -62,7 +62,7 @@
     transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
     filter:drop-shadow(0 8px 18px rgba(0,0,0,.6));
     cursor:pointer; pointer-events:auto;
-    transition:transform 2s ease, opacity .10s ease; /* your slow slide */
+    transition:transform 2s ease, opacity .10s ease;
     will-change: transform;
     z-index:5;
   }
@@ -91,11 +91,8 @@
     position:absolute; inset:0; background:#550000; opacity:0; transition:opacity .22s ease;
     z-index:4; pointer-events:none;
   }
-  /* Full-screen red flash */
   #screenFlash{
-    position:fixed; inset:0;
-    background:#550000;
-    opacity:0; transition:opacity .28s ease;
+    position:fixed; inset:0; background:#550000; opacity:0; transition:opacity .28s ease;
     z-index:9999; pointer-events:none;
   }
 
@@ -108,7 +105,6 @@
   .item.armed{ outline:2px solid var(--accent); }
   .hud{ position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85; z-index:5 }
 
-  /* inventory icon buttons */
   .item.icon{ padding:4px; border-radius:6px; display:inline-grid; place-items:center; width:40px; height:40px; }
   .item.icon img{ width:28px; height:28px; display:block; }
 
@@ -124,7 +120,7 @@
   .magnify-on #scene{ cursor:none; }
   .magnify-on #cursorLens{ display:block; }
 
-  /* Drawer */
+  /* Drawer (GRAB MOVED INSIDE .tray) */
   #drawer .tray{
     position:absolute; left:0; bottom:0; width:100%; height:100%;
     background:url('inlet.png') center/contain no-repeat;
@@ -132,9 +128,10 @@
     transition: transform .55s ease-out;
     will-change:transform;
   }
-  .grab{ position:absolute; inset:0; background:transparent; cursor:grab; z-index:5; }
+  /* grab follows the tray because it's inside .tray */
+  #drawer .tray .grab{ position:absolute; inset:0; background:transparent; cursor:grab; z-index:5; }
   #drawer.dragging .grab{ cursor:grabbing; }
-  #drawer.peeking .grab{ inset:0 0 auto 0; height:70px; }
+  #drawer.peeking .grab{ inset:0 0 auto 0; height:70px; } /* lip only */
   #drawer.open .grab{ pointer-events:none; }
 
   #drawer{
@@ -145,7 +142,7 @@
     z-index:6; pointer-events:auto; display:none;
   }
 
-  /* lens: fully clickable only when open */
+  /* lens: clickable only when open */
   #lensLoot{
     position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
     width:120px; max-width:38%; height:auto;
@@ -154,11 +151,9 @@
   }
   #drawer.open #lensLoot{ opacity:1; pointer-events:auto; cursor:pointer; }
 
-  /* fly-to-inventory */
   .flyLens{ position:fixed; width:120px; height:auto; pointer-events:none; z-index:9999;
     transform-origin:center center; transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .55s ease; }
 
-  /* Sparkles */
   .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
   @keyframes pop{ 0%{opacity:0; transform:translate(var(--x),var(--y)) scale(.4)} 40%{opacity:1} 100%{opacity:0; transform:translate(calc(var(--x) * 2), calc(var(--y) * 2)) scale(.1)} }
 </style>
@@ -181,12 +176,12 @@
       </div>
     </div>
 
-    <!-- Drawer (hidden until success) -->
+    <!-- Drawer (grab moved INSIDE tray) -->
     <div id="drawer" aria-label="Secret drawer">
       <div class="tray" id="drawerTray">
+        <div class="grab" aria-hidden="true" title="Drag to open"></div>
         <img id="lensLoot" src="lens.png" alt="Obsidian Lens">
       </div>
-      <div class="grab" aria-hidden="true" title="Drag to open"></div>
     </div>
 
     <div class="hud" id="hud"></div>
@@ -239,8 +234,7 @@ function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}
 function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
 
 cube.addEventListener('pointerdown', e => {
-  // If the press starts on the bat hotspot, let that element handle it.
-  if (e.target.closest('.hot-bat')) return;
+  if (e.target.closest('.hot-bat')) return;  // don’t hijack the bat
   dragging = true;
   if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
   sx = e.clientX; sy = e.clientY;
@@ -296,11 +290,10 @@ function openOverlay(){ overlay.classList.add('active'); overlay.setAttribute('a
 function closeOverlay(){ overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true'); backBtn.hidden=true; panel.innerHTML=''; }
 backBtn.onclick=closeOverlay;
 
-/* ------ drawer (hidden until reveal) ------ */
-const drawer=document.getElementById('drawer'), tray=document.getElementById('drawerTray'), grab=drawer.querySelector('.grab'), lens=document.getElementById('lensLoot');
+/* ------ drawer (grab is inside tray) ------ */
+const drawer=document.getElementById('drawer'), tray=document.getElementById('drawerTray'), grab=tray.querySelector('.grab'), lens=document.getElementById('lensLoot');
 let trayH=180, offset=180; const LIP=8;
 function measure(){ trayH=tray.getBoundingClientRect().height||180; }
-
 function apply(){
   tray.style.transform = `translateY(${offset}px)`;
   const fullyOpen = (offset === 0);
@@ -308,11 +301,9 @@ function apply(){
   drawer.classList.toggle('open',   fullyOpen);
   drawer.classList.toggle('peeking', peeking);
 }
-
 function slideDrawerClosed(){
   measure();
-  offset = trayH;    // fully hidden
-  apply();
+  offset = trayH; apply();
   const onEnd = ()=> {
     tray.removeEventListener('transitionend', onEnd);
     tray.removeEventListener('webkitTransitionEnd', onEnd);
@@ -344,7 +335,7 @@ grab.addEventListener('pointerup', endDrag); grab.addEventListener('pointercance
 
 /* lens collect → fly to toolbar then close drawer */
 lens.addEventListener('click', ()=>{
-  if (offset > 0) return;                   // only when fully open
+  if (offset > 0) return;
   if (lens.dataset.collected === '1') return;
 
   const sr = lens.getBoundingClientRect();
@@ -407,32 +398,30 @@ function renderP0(){
   const hmsg=document.getElementById('holdMsg');
   const msg=document.getElementById('p0msg');
 
-  // make certain it is above everything and clickable
-  bat.style.zIndex = '20';
-  bat.style.pointerEvents = 'auto';
+  bat.style.zIndex = '20'; bat.style.pointerEvents = 'auto';
 
   const onBatActivate = (ev)=>{
     ev.preventDefault(); ev.stopPropagation();
     try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
-    void bat.offsetHeight;     // reflow
+    void bat.offsetHeight;
     bat.classList.add('slide');
 
-    let revealed = false;
-    const reveal = ()=>{
-      if (revealed) return; revealed = true;
+    let revealed=false;
+    const reveal=()=>{
+      if(revealed) return; revealed=true;
       needle.classList.add('visible');
-      msg.textContent = 'You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
+      msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
       placeTip(); zone.classList.add('on');
     };
-    const onEnd = (e2)=>{
-      if (e2 && e2.propertyName && e2.propertyName !== 'transform') return;
+    const onEnd=(e2)=>{
+      if(e2 && e2.propertyName && e2.propertyName!=='transform') return;
       bat.removeEventListener('transitionend', onEnd);
       bat.removeEventListener('webkitTransitionEnd', onEnd);
       reveal();
     };
     bat.addEventListener('transitionend', onEnd, { once:true });
     bat.addEventListener('webkitTransitionEnd', onEnd, { once:true });
-    setTimeout(reveal, 900);   // safety fallback
+    setTimeout(reveal, 900);
   };
   bat.addEventListener('pointerdown', onBatActivate, { once:true });
   bat.addEventListener('click',       onBatActivate, { once:true });
@@ -440,14 +429,13 @@ function renderP0(){
   function placeTip(){
     const rectBox=document.getElementById('batbox').getBoundingClientRect();
     const nr=needle.getBoundingClientRect();
-    const tipX = nr.left + nr.width*0.26;  /* your custom offsets */
+    const tipX = nr.left + nr.width*0.26;
     const tipY = nr.top  + nr.height*0.65;
     zone.style.left=(tipX - rectBox.left - 23)+'px';
     zone.style.top =(tipY - rectBox.top  - 23)+'px';
   }
   window.addEventListener('resize', ()=>{ if(needle.classList.contains('visible')) placeTip(); });
 
-  // Hold logic (your timings preserved)
   let progress=0, holding=false, rafId=null, last=0;
   const FILL_MS=8000, DRAIN_MS=2000;
   function loop(ts){
@@ -472,17 +460,19 @@ function renderP0(){
   function success(){
     cancelAnimationFrame(rafId); rafId=null; holding=false; progress=1;
 
-    // full-screen red flash + stab sfx
+    // Full-screen red + stab
     screenFlash.style.opacity = 1;
     try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
 
-    // "several second" pause, then unlatch & slide sound
-    setTimeout(()=>{ unlatchDrawerAnimated(); }, 1600);
-
-    // fade back & exit zoom
-    setTimeout(()=>{ screenFlash.style.opacity = 0; closeOverlay(); log('Something below slides open…'); }, 2000);
+    // Fade red out, close zoom, then WAIT 3s before drawer pops
+    setTimeout(()=>{
+      screenFlash.style.opacity = 0;
+      closeOverlay();
+      log('Something below slides open…');
+      setTimeout(()=>{ unlatchDrawerAnimated(); }, 3000);  // long pause
+    }, 600); // allow a short moment of full red before fade
   }
-} // end renderP0
+}
 
 /* floating magnifier follows mouse when toggled */
 const cursorLens = document.getElementById('cursorLens');
