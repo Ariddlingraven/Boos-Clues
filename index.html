@@ -61,7 +61,8 @@
     transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
     filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)); cursor:pointer;
     transition:transform .35s ease, opacity .3s ease;
-    z-index:2; /* ensure bat above needle initially */
+    will-change: transform;  /* <-- help Safari reliably transition */
+    z-index:2;
   }
   /* slides off to the right */
   .batImg.slide{ transform:translate(160%,-50%); opacity:1; }
@@ -73,23 +74,23 @@
   }
   .needle.visible{ opacity:1; pointer-events:auto; }
 
-  /* --- stacking + pointer-events fix for tip zone --- */
+  /* stacking + pointer fixes */
   .tipZone{
     position:absolute; width:46px; height:46px; border-radius:50%;
     border:2px dashed rgba(220,180,120,.35);
     opacity:0; transition:opacity .2s;
-    pointer-events:none; /* ignore clicks while hidden */
-    z-index:3;           /* above needle once enabled */
+    pointer-events:none;  /* <-- ignore clicks while hidden */
+    z-index:3;
   }
-  .tipZone.on{
-    opacity:1;
-    pointer-events:auto; /* clickable only after reveal */
-  }
+  .tipZone.on{ opacity:1; pointer-events:auto; }
   .holdRing{ position:absolute; inset:0; transform:rotate(-90deg); }
   .holdRing circle{ fill:none; stroke:#d9b07c; stroke-width:3; stroke-dasharray:5 7; }
 
   .holdMsg{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); color:#d9b25f; opacity:.9; font-size:.95rem; }
-  .flashRed{ position:absolute; inset:0; background:#550000; opacity:0; transition:opacity .22s ease; z-index:4; }
+  .flashRed{
+    position:absolute; inset:0; background:#550000; opacity:0; transition:opacity .22s ease;
+    z-index:4; pointer-events:none; /* <-- do NOT block clicks while transparent */
+  }
 
   /* Toolbar & inventory */
   .ui{ display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; background:linear-gradient(#0a0a0a,#0b0b0b); border-top:1px solid #1c1a15; height:var(--toolbarH); }
@@ -245,7 +246,7 @@ function renderP0(){
   const hmsg=document.getElementById('holdMsg');
   const msg=document.getElementById('p0msg');
 
-  // Slide bat off-screen; reveal on transitionend (plus fallback)
+  // Slide bat off-screen; reveal on transitionend (plus robust fallbacks)
   bat.addEventListener('click', ()=>{
     bat.classList.add('slide');
 
@@ -259,12 +260,15 @@ function renderP0(){
     };
 
     const onEnd=(e)=>{
-      if(e.propertyName && e.propertyName!=='transform') return;
+      // Safari sometimes reports different propertyNames; accept absence or transform
+      if(e && e.propertyName && e.propertyName!=='transform') return;
       bat.removeEventListener('transitionend', onEnd);
+      bat.removeEventListener('webkitTransitionEnd', onEnd);
       reveal();
     };
     bat.addEventListener('transitionend', onEnd, {once:true});
-    setTimeout(reveal, 450); // fallback in case transitionend doesn't fire
+    bat.addEventListener('webkitTransitionEnd', onEnd, {once:true});
+    setTimeout(reveal, 550); // hard fallback if transitionend never fires
   }, {once:true});
 
   function placeTip(){
@@ -279,16 +283,23 @@ function renderP0(){
 
   // Hold logic (fill while pressed, drain otherwise)
   let progress=0, holding=false, rafId=null, last=0;
-  const FILL_MS=8000, DRAIN_MS=2000;
+    const FILL_MS=8000, DRAIN_MS=2000;
   function loop(ts){
-    if(!last) last=ts; const dt=ts-last; last=ts;
-    progress = holding ? Math.min(1, progress + dt/FILL_MS) : Math.max(0, progress - dt/DRAIN_MS);
+    if(!last) last=ts;
+    const dt=ts-last; last=ts;
+    progress = holding ? Math.min(1, progress + dt/FILL_MS)
+                       : Math.max(0, progress - dt/DRAIN_MS);
     hmsg.textContent = holding ? 'Better hold still' : '';
     if(progress>=1){ success(); return; }
     rafId=requestAnimationFrame(loop);
   }
   function start(){ if(!rafId){ last=0; rafId=requestAnimationFrame(loop);} }
-  zone.addEventListener('pointerdown', e=>{ if(!needle.classList.contains('visible')) return; zone.setPointerCapture(e.pointerId); holding=true; start(); });
+
+  zone.addEventListener('pointerdown', e=>{
+    if(!needle.classList.contains('visible')) return;
+    zone.setPointerCapture(e.pointerId);
+    holding=true; start();
+  });
   zone.addEventListener('pointerup',   ()=>{ holding=false; });
   zone.addEventListener('pointercancel',()=>{ holding=false; });
 
@@ -296,9 +307,14 @@ function renderP0(){
     cancelAnimationFrame(rafId); rafId=null; holding=false; progress=1;
     flash.style.opacity=1;           // red flash
     setTimeout(()=>slideSfx(), 80);  // drawer slide sound during red
-    setTimeout(()=>{ flash.style.opacity=0; closeOverlay(); revealDrawerLip(); log('Something below slides open…'); }, 420);
+    setTimeout(()=>{
+      flash.style.opacity=0;
+      closeOverlay();
+      revealDrawerLip();
+      log('Something below slides open…');
+    }, 420);
   }
-}
+} // end renderP0
 
 /* boot */
 updateCube();
