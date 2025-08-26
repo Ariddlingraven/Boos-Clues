@@ -320,7 +320,7 @@ box.addEventListener('click', onBatClick);
     const box=document.getElementById('batbox').getBoundingClientRect();
     const nr=needle.getBoundingClientRect();
     const tipX = nr.left + nr.width*0.25;  // ~25% across (left-pointing tip)
-    const tipY = nr.top  + nr.height*0.00; // centered vertically
+    const tipY = nr.top  + nr.height*0.75; // centered vertically
     zone.style.left=(tipX - box.left - 23)+'px';
     zone.style.top =(tipY - box.top  - 23)+'px';
   }
