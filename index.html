@@ -390,16 +390,17 @@ box.addEventListener('click', onBatClick);
 screenFlash.style.opacity = 1;
 try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
 
-// keep your drawer slide sfx shortly after the stab
-setTimeout(()=>slideSfx(), 120);
+// small delay while red, then unlatch the drawer with stoneslide sfx
+setTimeout(()=>{
+  unlatchDrawerAnimated();
+}, 220);
 
+// fade the red screen and finish
 setTimeout(()=>{
   screenFlash.style.opacity = 0;
   closeOverlay();
-  revealDrawerLip();
   log('Something below slides open…');
-}, 520); // slightly longer to match the slower feel
-
+}, 560);
   }
 } // end renderP0
 
