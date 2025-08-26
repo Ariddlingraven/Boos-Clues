@@ -9,42 +9,43 @@
     --ui:#c7b07c; --accent:#3bd0c7; --obs:#111; --ink:#0a0a0a;
     --gold:#d9b25f; --crimson:#a22; --indigo:#3744a3;
     --cube:44vmin; --half:calc(var(--cube)/2);
+    --toolbarH:68px;
   }
   html,body{height:100%;margin:0;background:#0b0b0b;color:#e6e0d4;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
-  #game{position:relative;min-height:100%;overflow:hidden;}
-  #scene{
-    height:62vh; min-height:420px; max-height:70vh;
-    display:grid; place-items:center; position:relative;
-    background:#0d0d0d; /* base behind fronds */
-    isolation:isolate;  /* so z-index layering is crisp */
-  }
+  #game{position:relative;min-height:100%;overflow:hidden;display:grid;grid-template-rows:1fr var(--toolbarH);}
 
-  /* --- Jungle backdrop (moody, blurred, darkened) --- */
-  #scene::before{
-    content:""; position:absolute; inset:-10% -10% 0 -10%;
-    background:url('assets_task_01k2rk4y12fxstvcm7vpkkvm3v_1755319567_img_0.jpg') center/cover no-repeat;
-    filter:blur(2.6px) brightness(.45) saturate(.9) contrast(1.05);
-    z-index:0;
-    transform:translateZ(0); will-change:transform;
+  /* ====== SCENE ====== */
+  #scene{
+    position:relative;
+    display:grid; place-items:center;
+    background:#0d0d0d;
+    isolation:isolate;
+    overflow:hidden;
   }
-  /* soft vignette above fronds but under cube */
+  /* Jungle backdrop (blur/darken) */
+  #scene::before{
+    content:""; position:absolute; inset:-12% -12% 0 -12%;
+    background:url('assets_task_01k2rk4y12fxstvcm7vpkkvm3v_1755319567_img_0.jpg') center/cover no-repeat;
+    filter:blur(2.8px) brightness(.45) saturate(.9) contrast(1.05);
+    z-index:0; transform:translateZ(0);
+  }
+  /* Vignette */
   #scene::after{
     content:""; position:absolute; inset:-10%;
     pointer-events:none; z-index:2;
-    background:radial-gradient(circle at 50% 40%, transparent 40%, rgba(0,0,0,.55) 78%, rgba(0,0,0,.78) 100%);
+    background:radial-gradient(circle at 50% 40%, transparent 40%, rgba(0,0,0,.55) 78%, rgba(0,0,0,.8) 100%);
   }
 
+  /* Pedestal */
   #pedestal{
-    position:absolute; inset:auto 0 2vh 0; height:7vh; display:grid; place-items:center; z-index:1;
+    position:absolute; inset:auto 0 calc(var(--toolbarH) - 6px) 0; height:9vh; min-height:64px; display:grid; place-items:center; z-index:1;
     filter: drop-shadow(0 8px 50px #000);
   }
-  #pedestal img{height:100%;opacity:.4;mix-blend:screen}
+  #pedestal img{height:100%;opacity:.38;mix-blend:screen}
 
   /* Cube */
-  #cubeWrap{
-    perspective:1100px; transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
-    width:min(90vw,1100px); height:100%; display:grid; place-items:center; z-index:3;
-  }
+  #cubeWrap{ perspective:1100px; transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
+             width:min(92vw,1100px); height:100%; display:grid; place-items:center; z-index:3; }
   #cubeShadow{ filter: drop-shadow(0 30px 60px #000); }
   #cube{
     position:relative; width:var(--cube); height:var(--cube);
@@ -54,9 +55,8 @@
   }
   .face{
     position:absolute; inset:0; display:grid; place-items:center; user-select:none;
-    background:#111 url('boxTexture.png') center/cover no-repeat;
-    border:1px solid #000; box-shadow: inset 0 0 60px rgba(0,0,0,.7);
-    backface-visibility:hidden; -webkit-backface-visibility:hidden;
+    background:#111 url('boxTexture.png') center/cover no-repeat; border:1px solid #000;
+    box-shadow: inset 0 0 60px rgba(0,0,0,.7); backface-visibility:hidden; -webkit-backface-visibility:hidden;
   }
   .face::after{
     content:""; position:absolute; inset:0; pointer-events:none;
@@ -72,12 +72,22 @@
   .top{    transform: rotateX( 90deg) translateZ(var(--half));}
   .bottom{ transform: rotateX(-90deg) translateZ(var(--half));}
 
+  /* Front face: smaller generic hot area to leave room for bat flap hotspot */
+  .front .hot{ width:42%; height:42%; }
+
   .face button, .ui button{ cursor:pointer; background:#201e1a; color:var(--ui); border:1px solid #514530; border-radius:.35rem; padding:.5rem .75rem; }
   .face button:hover, .ui button:hover{ background:#2a2722; }
-  .face .hot{ position:absolute; inset:auto; width:60%; height:60%; border-radius:1rem; outline:2px solid rgba(255,255,255,.04); }
-  .face .hot:hover{ outline-color:rgba(217,178,95,.35); box-shadow:0 0 12px rgba(217,178,95,.25) inset; }
 
-  /* Overlay (puzzle UIs) */
+  /* Specific bat flap hotspot on the front face (top-left quadrant) */
+  .hot-bat{
+    position:absolute; top:10%; left:10%; width:30%; aspect-ratio:2/1; border-radius:.5rem;
+    background:url('batflap.png') center/contain no-repeat;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.6));
+    transition:transform .2s, filter .2s; cursor:pointer;
+  }
+  .hot-bat:hover{ transform:translateY(-2px); filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
+
+  /* ====== Overlay (puzzle UIs) ====== */
   #overlay{ position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; }
   #overlay.active{ display:grid; }
   .panel{
@@ -88,90 +98,70 @@
   .panel h3{margin:.2rem 0 1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase}
   .panel .row{ display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center;}
   .glyph, .dial, .mirror, .drum, .node, .petal{ user-select:none; }
-  .glyph{ width:82px; height:82px; display:grid; place-items:center; border:1px solid #3b3122; border-radius:10px; background:#191818; box-shadow:inset 0 0 20px rgba(0,0,0,.6); transition:transform .06s ease; }
-  .glyph:active{ transform:scale(0.96); }
-  .glyph.good{ outline:2px solid #31c758; }
-  .mirror{ width:90px; height:90px; border-radius:50%; border:1px solid #40351f; background:#101010; display:grid; place-items:center; position:relative; transition:box-shadow .2s; }
-  .mirror.ok{ box-shadow:0 0 18px rgba(217,178,95,.35), inset 0 0 20px rgba(255,255,255,.05); }
-  .mirror::before{content:"▲"; color:#a88; font-size:26px; transform:rotate(0deg); transition:transform .2s;}
-  .mirror[data-deg="45"]::before{ transform:rotate(45deg);}
-  .mirror[data-deg="90"]::before{ transform:rotate(90deg);}
-  .mirror[data-deg="135"]::before{ transform:rotate(135deg);}
-  .mirror[data-deg="180"]::before{ transform:rotate(180deg);}
-  .mirror[data-deg="225"]::before{ transform:rotate(225deg);}
-  .mirror[data-deg="270"]::before{ transform:rotate(270deg);}
-  .mirror[data-deg="315"]::before{ transform:rotate(315deg);}
 
-  .dial{ width:84px; height:84px; border-radius:50%; background:#151515; border:1px solid #42361d; display:grid; place-items:center; }
-  .dial span{font-size:14px; opacity:.85}
-
-  .drum{ width:120px; height:120px; border-radius:999px; background:#3b2b16; border:2px solid #5b4121; box-shadow:inset 0 10px 30px rgba(0,0,0,.6);}
-  .drum:active{ filter:brightness(1.1); }
-
-  /* Prism beam */
-  #beam{ width:100%; height:44px; margin-top:6px; }
-  #beamPath{ stroke:url(#beamGrad); stroke-width:3; fill:none; stroke-dasharray:320; stroke-dashoffset:320; filter:drop-shadow(0 0 6px rgba(217,178,95,.35)); transition:stroke-dashoffset .35s ease; }
-
-  .wheel{ position:relative; width:340px; height:340px; }
-  .ring{ position:absolute; inset:0; border-radius:50%; border:2px solid #3a2e19; display:grid; place-items:center; }
-  .outer{ background:repeating-conic-gradient(from 0deg, #0f0f0f 0 22.5deg, #141414 22.5deg 45deg);}
-  .inner{ inset:45px; background:repeating-conic-gradient(from 0deg, #121212 0 22.5deg, #1a1a1a 22.5deg 45deg);}
-  .mark{ position:absolute; top:-12px; width:2px; height:20px; background:var(--gold); left:50%; transform:translateX(-50%);}
-  .keyhole{ position:absolute; inset:auto 0 50% 0; display:grid; place-items:center; }
-  .keyhole button{ padding:.35rem .6rem }
-
-  .tapa{ position:relative; width:min(540px,86vw); height:min(540px,86vw); background:#141313; border:1px solid #3b3122; border-radius:12px; }
-  .nodes{ position:absolute; inset:12px; }
-  .node{ position:absolute; width:26px; height:26px; border-radius:50%; background:#242220; border:1px solid #4c4028; display:grid; place-items:center; color:#9a8; font-size:12px;}
-  .node.active{ outline:2px solid #31c758;}
-  .rope{ position:absolute; inset:0; pointer-events:none; }
-  .rope path{ stroke:#d6c18b; stroke-width:4; fill:none; filter: drop-shadow(0 0 4px rgba(214,193,139,.4)); }
-
-  .hibiscus{ position:relative; width:min(560px,86vw); height:min(560px,86vw); display:grid; place-items:center; }
-  .ring6{ position:absolute; width:260px; height:260px; border-radius:50%; border:2px solid #3b3122;
-          transform:rotate(0deg); transition:transform .25s ease; }
-  .ringLabel{ position:absolute; top:-28px; color:#ccc; font-size:12px; left:50%; transform:translateX(-50%); }
-  .petal{
-    position:absolute; width:120px; height:120px; border-radius:18px; display:grid; place-items:center; color:#eee; font-weight:700;
-    background:#151515; border:1px solid #3b3122; box-shadow:inset 0 0 40px rgba(0,0,0,.6);
+  /* Pre-puzzle panel layout */
+  .batbox{ position:relative; width:min(700px,92vw); height:min(420px,68vh);
+           background:#111; border:1px solid #3b3122; border-radius:12px; overflow:hidden;
+           box-shadow:inset 0 0 40px rgba(0,0,0,.55); }
+  .batbg{ position:absolute; inset:0; background:#131313; }
+  .batflap{
+    position:absolute; left:14%; top:28%; width:52%; height:36%;
+    background:url('batflap.png') center/contain no-repeat;
+    transform-origin:12% 50%;
+    transform:rotate(0deg);
+    touch-action:none;
   }
-  .petal.good{ outline:2px solid #31c758;}
-  .p1{ transform:translate(-60px,-210px); background:linear-gradient(#221, #432); border-color:#5a4528}
-  .p2{ transform:translate(170px,-120px); background:linear-gradient(#111,#223); }
-  .p3{ transform:translate(170px,120px); background:linear-gradient(#102222,#173c3c); }
-  .p4{ transform:translate(-60px,210px); background:linear-gradient(#2a0e0e,#3b1111); }
-  .p5{ transform:translate(-290px,120px); background:linear-gradient(#111,#223); }
-  .p6{ transform:translate(-290px,-120px); background:linear-gradient(#221, #432); }
-  .clr-gold{ color:var(--gold); } .clr-teal{ color:var(--accent);} .clr-crimson{ color:var(--crimson);} .clr-indigo{ color:var(--indigo); }
+  .needle{
+    position:absolute; left:48%; top:28%; width:46%; height:44%;
+    background:url('needle.png') center/contain no-repeat;
+    opacity:0; transition:opacity .35s ease;
+  }
+  .needle.visible{ opacity:1; }
+  .tipZone{
+    position:absolute; width:44px; height:44px; border-radius:50%;
+    border:1px dashed rgba(220,180,120,.25);
+    pointer-events:auto;
+  }
+  .holdUI{
+    position:absolute; left:0; top:0; width:44px; height:44px; border-radius:50%;
+    display:grid; place-items:center; color:#d9b25f; font-size:11px; pointer-events:none;
+  }
+  .holdRing{ position:absolute; inset:0; transform:rotate(-90deg); }
+  .holdRing circle{ fill:none; stroke:#d9b25f; stroke-width:3; stroke-linecap:round; stroke-dasharray:276; stroke-dashoffset:276; }
 
-  /* UI Bar */
-  .ui{ position:relative; padding:.5rem 1rem 1rem; background:linear-gradient(#0a0a0a, #0b0b0b); border-top:1px solid #1c1a15;}
-  #inventory{ display:flex; gap:.5rem; padding:.5rem 0; min-height:52px; align-items:center; }
-  .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4;}
-  .item.armed{ outline:2px solid var(--accent);}
+  /* ====== Toolbar (bottom) ====== */
+  .ui{
+    position:relative; display:flex; align-items:center; gap:.5rem;
+    padding:.5rem .8rem; background:linear-gradient(#0a0a0a, #0b0b0b);
+    border-top:1px solid #1c1a15; height:var(--toolbarH); overflow:hidden;
+  }
+  #log{ font-size:.9rem; color:#cbbd9a; opacity:.9; margin-right:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .spacer{ flex:1 }
-  .ui button{ margin-right:.35rem }
-  #log{ font-size:.9rem; color:#cbbd9a; opacity:.9; min-height:1.2em }
-  .hud{position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85}
+  #inventory{ display:flex; gap:.5rem; align-items:center; overflow:auto; }
+  .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4; white-space:nowrap; }
+  .item.armed{ outline:2px solid var(--accent);}
+  .ui .nav, .ui #hintBtn, .ui #musicBtn{ padding:.4rem .55rem; }
 
+  /* HUD in scene (top-right) */
+  .hud{position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85; z-index:5}
+
+  /* Back button for overlays */
   #backBtn{ position:absolute; top:10px; left:10px; z-index:11 }
 
-  /* --- Scene Drawer (slides from UI strip area) --- */
+  /* ====== Drawer (above toolbar) ====== */
   #drawer{
-    position:absolute; left:50%; bottom:-1px; transform:translateX(-50%);
-    width:min(520px, 70vw); height:180px; z-index:4; pointer-events:auto;
+    position:absolute; left:50%; transform:translateX(-50%);
+    bottom:calc(var(--toolbarH) - 2px);
+    width:min(520px,70vw); height:180px; z-index:6; pointer-events:auto;
   }
   #drawer .tray{
     position:absolute; left:0; bottom:0; width:100%; height:100%;
     background:url('inlet.png') center/contain no-repeat;
-    transform:translateY(100%); /* closed off-screen */
-    transition:transform .5s cubic-bezier(.2,.9,.1,1); will-change:transform;
+    transform:translateY(100%); /* fully hidden by default */
+    will-change:transform;
   }
-  #drawer.half .tray{ transform:translateY(40%); }
-  #drawer.open .tray{ transform:translateY(0%); }
-
-  #drawer .grab{ position:absolute; inset:0; cursor:grab; }
   #drawer.dragging .grab{ cursor:grabbing; }
+  .grab{ position:absolute; inset:0; cursor:grab; }
 
   #lensLoot{
     position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
@@ -191,7 +181,10 @@
     <div id="cubeWrap">
       <div id="cubeShadow">
         <div id="cube" role="group" aria-label="Puzzle box" tabindex="0">
-          <div class="face front"  data-face="front"  aria-label="Front face – Totem lock"><div class="hot" data-open="p1"></div></div>
+          <div class="face front" data-face="front" aria-label="Front face – Totem lock">
+            <div class="hot-bat" data-open="p0" title="Inspect bat flap"></div>
+            <div class="hot" data-open="p1" title="Front puzzle"></div>
+          </div>
           <div class="face right"  data-face="right"  aria-label="Right face – Tide calendar"><div class="hot" data-open="p3"></div></div>
           <div class="face back"   data-face="back"   aria-label="Back face – Blood oath cipher"><div class="hot" data-open="p5"></div></div>
           <div class="face left"   data-face="left"   aria-label="Left face – Coconut drums"><div class="hot" data-open="p4"></div></div>
@@ -201,15 +194,27 @@
       </div>
     </div>
 
-    <!-- Scene Drawer lives IN the scene so it can open behind the overlay -->
+    <!-- Drawer sits just above the toolbar; lens is pre-loaded -->
     <div id="drawer" aria-label="Secret drawer">
-      <div class="tray">
+      <div class="tray" id="drawerTray">
         <img id="lensLoot" src="lens.png" alt="Obsidian Lens">
       </div>
       <div class="grab" aria-hidden="true" title="Drag to open"></div>
     </div>
 
+    <div class="hud" id="hud"></div>
     <div id="pedestal"><img src="obsidian_placeholder.png" alt=""></div>
+  </div>
+
+  <!-- Toolbar -->
+  <div class="ui">
+    <div id="log">Welcome. Drag to rotate the box. Click a face to zoom.</div>
+    <button class="nav" id="prevFace" aria-label="Previous face">◀</button>
+    <button class="nav" id="nextFace" aria-label="Next face">▶</button>
+    <button id="hintBtn" aria-label="Hint">Hint</button>
+    <button id="musicBtn" aria-label="Music">♫</button>
+    <div class="spacer"></div>
+    <div id="inventory" aria-label="Inventory" role="listbox"></div>
   </div>
 
   <!-- Overlay -->
@@ -218,25 +223,11 @@
     <div class="panel" id="panel"></div>
   </div>
 
-  <!-- Bottom UI -->
-  <div class="ui">
-    <div id="log">Welcome. Drag to rotate the box. Click a face to zoom.</div>
-    <div style="display:flex; align-items:center">
-      <button class="nav" id="prevFace" aria-label="Previous face">◀</button>
-      <button class="nav" id="nextFace" aria-label="Next face">▶</button>
-      <div class="spacer"></div>
-      <button id="hintBtn" aria-label="Hint">Hint</button>
-      <button id="musicBtn" aria-label="Music">♫</button>
-    </div>
-    <div id="inventory" aria-label="Inventory" role="listbox"></div>
-    <div class="hud" id="hud"></div>
-  </div>
-
   <audio id="bgm" src="background.mp3" loop></audio>
 </div>
 
 <script>
-/* ---------- tiny synth for UI blips ---------- */
+/* ---------- Tiny synth for UI blips ---------- */
 const AC = window.AudioContext || window.webkitAudioContext;
 const audio = AC ? new AC() : null;
 function blip(freq=520, dur=0.06, type='sine', gain=0.03){
@@ -262,7 +253,7 @@ function slideSfx(){
   src.connect(filt); filt.connect(g); g.connect(audio.destination); src.start();
 }
 
-/* ----------------------- Core camera / faces (+inertia & lighting) ----------------------- */
+/* ---------------- Camera / faces (with inertia & lighting) ---------------- */
 const cube = document.getElementById('cube');
 const scene = document.getElementById('scene');
 const panel = document.getElementById('panel');
@@ -272,76 +263,51 @@ const logEl = document.getElementById('log');
 const hud = document.getElementById('hud');
 
 const faces = ['front','right','back','left','top','bottom'];
-let rotY = 0, rotX = 0;
-let dragging=false, sx=0, sy=0;
-let vy=0, vx=0, raf=null, lastT=0;
-let currentFaceIndex = 0;
+let rotY = 0, rotX = 0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0, currentFaceIndex=0;
 
-function updateCube(){
-  cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
-  hud.textContent = faces[currentFaceIndex].toUpperCase();
-}
+function updateCube(){ cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`; hud.textContent = faces[currentFaceIndex].toUpperCase(); }
 function updateFaceIndex(){
   const faceAngles = {front:[0,0], right:[0,-90], back:[0,180], left:[0,90], top:[-90,0], bottom:[90,0]};
-  let min=1e9, idx=0, i=0;
-  for(const k of faces){const [tx,ty]=faceAngles[k]; const d=(tx-rotX)**2+(ty-rotY)**2; if(d<min){min=d; idx=i} i++;}
+  let min=1e9, idx=0, i=0; for(const k of faces){ const [tx,ty]=faceAngles[k]; const d=(tx-rotX)**2+(ty-rotY)**2; if(d<min){min=d; idx=i} i++; }
   currentFaceIndex=idx;
 }
-function tick(t){
-  if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t;
-  rotY += vy*dt; rotX += vx*dt; vy *= 0.95; vx *= 0.95;
-  rotX = Math.max(-89, Math.min(89, rotX));
-  updateFaceIndex(); updateCube();
-  if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;}
-}
+function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateFaceIndex(); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
 function setFaceByIndex(idx){
-  currentFaceIndex = (idx+faces.length)%faces.length;
-  const f = faces[currentFaceIndex];
-  if (f==='front') {rotX=0;rotY=0}
-  if (f==='right') {rotX=0;rotY=-90}
-  if (f==='back') {rotX=0;rotY=180}
-  if (f==='left') {rotX=0;rotY=90}
-  if (f==='top') {rotX=-90;rotY=0}
-  if (f==='bottom') {rotX=90;rotY=0}
+  currentFaceIndex=(idx+faces.length)%faces.length;
+  const f=faces[currentFaceIndex];
+  if (f==='front'){rotX=0;rotY=0}
+  if (f==='right'){rotX=0;rotY=-90}
+  if (f==='back'){rotX=0;rotY=180}
+  if (f==='left'){rotX=0;rotY=90}
+  if (f==='top'){rotX=-90;rotY=0}
+  if (f==='bottom'){rotX=90;rotY=0}
   updateCube();
 }
 document.getElementById('prevFace').onclick=()=>setFaceByIndex(currentFaceIndex-1);
 document.getElementById('nextFace').onclick=()=>setFaceByIndex(currentFaceIndex+1);
-
-cube.addEventListener('mousedown',e=>{
-  dragging=true; sx=e.clientX; sy=e.clientY;
-  if(raf){ cancelAnimationFrame(raf); raf=null; }
-});
-window.addEventListener('mouseup',()=>{
-  if(!dragging) return;
-  dragging=false; lastT=0; raf=requestAnimationFrame(tick);
-});
+cube.addEventListener('mousedown',e=>{ dragging=true; sx=e.clientX; sy=e.clientY; if(raf){ cancelAnimationFrame(raf); raf=null; } });
+window.addEventListener('mouseup',()=>{ if(!dragging) return; dragging=false; lastT=0; raf=requestAnimationFrame(tick); });
 window.addEventListener('mousemove',e=>{
-  if(!dragging) return;
-  const dx=e.clientX-sx, dy=e.clientY-sy;
-  rotY += dx*0.25; rotX -= dy*0.25;
-  vy = dx*0.15; vx = -dy*0.15;
-  sx=e.clientX; sy=e.clientY;
-  updateFaceIndex(); updateCube();
+  if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy;
+  rotY+=dx*0.25; rotX-=dy*0.25; vy=dx*0.15; vx=-dy*0.15; sx=e.clientX; sy=e.clientY; updateFaceIndex(); updateCube();
 });
-/* live highlight position on the cube */
 scene.addEventListener('mousemove', e=>{
   const r=scene.getBoundingClientRect();
-  const hx=((e.clientX-r.left)/r.width*100).toFixed(1)+'%';
-  const hy=((e.clientY-r.top)/r.height*100).toFixed(1)+'%';
-  cube.style.setProperty('--hx', hx); cube.style.setProperty('--hy', hy);
+  cube.style.setProperty('--hx', ((e.clientX-r.left)/r.width*100).toFixed(1)+'%');
+  cube.style.setProperty('--hy', ((e.clientY-r.top)/r.height*100).toFixed(1)+'%');
 });
 
-document.querySelectorAll('.hot').forEach(h=>{
+/* Make all hotspots open their panels */
+document.querySelectorAll('[data-open]').forEach(h=>{
   h.addEventListener('click',()=>{ blip(640,0.05,'triangle'); openPuzzle(h.dataset.open); });
 });
 
-/* ----------------------- Inventory ----------------------- */
+/* ---------------- Inventory ---------------- */
 const inventoryEl = document.getElementById('inventory');
 let armedItem = null;
 const state = {
   inventory: [],
-  flags:{p1:false,p2:false,p3:false,p4:false,p5:false,p6:false,p7:false},
+  flags:{p0:false,p1:false,p2:false,p3:false,p4:false,p5:false,p6:false,p7:false},
   lensesPlaced:false,
 };
 function addItem(id, label){
@@ -354,15 +320,14 @@ function addItem(id, label){
     document.querySelectorAll('.item').forEach(e=>e.classList.remove('armed'));
     if(armedItem===id){armedItem=null; log('Put away '+label); return;}
     armedItem=id; btn.classList.add('armed'); log('Holding '+label);
-  }
-  inventoryEl.appendChild(btn);
-  sparkle(btn);
-  blip(880,0.08,'sine'); setTimeout(()=>blip(1175,0.08,'sine'),120);
+  };
+  inventoryEl.appendChild(btn); sparkle(btn); blip(880,0.08,'sine'); setTimeout(()=>blip(1175,0.08,'sine'),120);
 }
 function has(id){ return state.inventory.includes(id); }
 
-/* ----------------------- Hints / Audio ----------------------- */
+/* ---------------- Hints / Audio ---------------- */
 const hintMap = {
+  p0:"The left wing is loose. Lift it and keep your hand steady.",
   p1:"“Totems watch the sky and sea.”",
   p2:"Gold → Teal → Crimson; mirrors remember angles.",
   p3:"New → First → Full → Last — what numbers hide below?",
@@ -376,11 +341,10 @@ document.getElementById('hintBtn').onclick=()=>{ if(lastPanel) log(hintMap[lastP
 const bgm = document.getElementById('bgm');
 document.getElementById('musicBtn').onclick=()=>{ if(bgm.paused) bgm.play(); else bgm.pause(); };
 
-/* ----------------------- Overlay plumbing ----------------------- */
+/* ---------------- Overlay plumbing ---------------- */
 function openOverlay(){ overlay.classList.add('active'); overlay.setAttribute('aria-hidden','false'); backBtn.hidden=false; }
 function closeOverlay(){ overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true'); backBtn.hidden=true; panel.innerHTML=''; }
 backBtn.onclick=closeOverlay;
-
 function log(msg){ logEl.textContent = msg; }
 function sparkle(target){
   const r = target.getBoundingClientRect();
@@ -395,60 +359,165 @@ function sparkle(target){
   }
 }
 
-/* ----------------------- Scene Drawer logic ----------------------- */
+/* ---------------- Drawer logic (above toolbar) ---------------- */
 const drawer = document.getElementById('drawer');
-const tray = drawer.querySelector('.tray');
+const tray = document.getElementById('drawerTray');
 const grab = drawer.querySelector('.grab');
 const lensLoot = document.getElementById('lensLoot');
 
-let drawerProgress = 0; // 0 closed, 0.5 half, 1 open
+let trayHeight = 180;
+let drawerOffset = trayHeight; // px translateY — 0 open, trayHeight closed, trayHeight - lip lip
+const LIP = 18;
 
-function setDrawer(p, animate=true){
-  drawerProgress = Math.max(0, Math.min(1, p));
-  if(!animate){ tray.style.transition='none'; }
-  tray.style.transform = `translateY(${(1-drawerProgress)*100}%)`;
-  drawer.classList.toggle('half', drawerProgress>=0.45 && drawerProgress<0.95);
-  drawer.classList.toggle('open', drawerProgress>=0.95);
-  if(!animate){ void tray.offsetWidth; tray.style.transition='transform .5s cubic-bezier(.2,.9,.1,1)'; }
-}
-function openMainDrawerHalf(){ setDrawer(0.5); slideSfx(); }
-function openMainDrawerFull(){ setDrawer(1); }
+function measureDrawer(){ trayHeight = tray.getBoundingClientRect().height || 180; setDrawerClosed(); positionDrawer(); }
+function positionDrawer(){ drawer.style.bottom = `calc(var(--toolbarH) - 2px)`; }
+window.addEventListener('resize', ()=>{ measureDrawer(); });
 
-let gStartY=0, gStartP=0, draggingDrawer=false, travelPx=180;
-function refreshTravel(){ travelPx = tray.getBoundingClientRect().height || 180; }
-window.addEventListener('resize', refreshTravel); refreshTravel();
+function applyDrawer(){ tray.style.transform = `translateY(${drawerOffset}px)`; drawer.classList.toggle('open', drawerOffset<=2); }
+function setDrawerClosed(){ drawerOffset = trayHeight; applyDrawer(); }
+function setDrawerLip(){ drawerOffset = Math.max(0, trayHeight - LIP); applyDrawer(); }
+function setDrawerOpen(){ drawerOffset = 0; applyDrawer(); }
 
+function revealDrawerLip(){ setDrawerLip(); slideSfx(); }
+
+let dragStartY=0, dragStartOffset=0, draggingDrawer=false;
 grab.addEventListener('pointerdown', e=>{
   grab.setPointerCapture(e.pointerId);
-  draggingDrawer=true; drawer.classList.add('dragging');
-  gStartY=e.clientY; gStartP=drawerProgress;
+  draggingDrawer=true; dragStartY=e.clientY; dragStartOffset=drawerOffset;
 });
 grab.addEventListener('pointermove', e=>{
   if(!draggingDrawer) return;
-  const dy = gStartY - e.clientY; // up opens
-  const delta = dy / travelPx;
-  setDrawer(gStartP + delta, false);
+  const dy = e.clientY - dragStartY; // dragging up reduces offset
+  drawerOffset = Math.max(0, Math.min(trayHeight, dragStartOffset + dy));
+  applyDrawer();
 });
 function endDrawerDrag(){
-  draggingDrawer=false; drawer.classList.remove('dragging');
-  const snap = drawerProgress>0.75 ? 1 : (drawerProgress>0.25 ? 0.5 : 0);
-  setDrawer(snap);
+  draggingDrawer=false;
+  // snap to nearest of {closed, lip, open}
+  const distClosed = Math.abs(drawerOffset - trayHeight);
+  const distLip    = Math.abs(drawerOffset - Math.max(0, trayHeight-LIP));
+  const distOpen   = Math.abs(drawerOffset - 0);
+  const min = Math.min(distClosed, distLip, distOpen);
+  if(min===distOpen) setDrawerOpen();
+  else if(min===distLip) setDrawerLip();
+  else setDrawerClosed();
 }
 grab.addEventListener('pointerup', endDrawerDrag);
 grab.addEventListener('pointercancel', endDrawerDrag);
 
 lensLoot.addEventListener('click', ()=>{
-  if(drawerProgress<0.95) return;
+  if(drawerOffset>2) return;
   addItem('lens','Obsidian Lens');
   log('You obtained the Obsidian Lens.');
   lensLoot.style.pointerEvents='none';
 });
 
-/* =================================================================
-   (Existing puzzles unchanged below; P0 needle puzzle will call openMainDrawerHalf())
-   ================================================================= */
+/* ===================== P0 — Bat flap / Needle (pre-puzzle) ===================== */
+const p0 = { opened:false, done:false };
 
-/* P1 — Totem (unchanged) */
+function renderP0(){
+  lastPanel='p0'; openOverlay();
+  panel.innerHTML = `
+    <h3>Bat Flap</h3>
+    <div class="batbox" id="batbox">
+      <div class="batbg"></div>
+      <div class="needle" id="needle"></div>
+      <div class="batflap" id="batflap" title="Drag the left wing up and over"></div>
+    </div>
+    <p id="p0msg">${p0.done ? 'The drawer lip is peeking above the toolbar.' : 'Lift the loose wing and hold your finger to the needle.'}</p>`;
+  const flap = document.getElementById('batflap');
+  const needle = document.getElementById('needle');
+  if(p0.opened){ flap.style.transform='rotate(120deg)'; needle.classList.add('visible'); }
+
+  // ---- Flap drag (hinge @ left wing) ----
+  flap.style.touchAction='none';
+  let startAng=0, dragging=false;
+  function angleFromPointer(e){
+    const r = flap.getBoundingClientRect();
+    // hinge point ~12% x, 50% y of flap rect
+    const hx = r.left + r.width*0.12, hy = r.top + r.height*0.5;
+    const dx = e.clientX - hx, dy = e.clientY - hy;
+    let a = Math.atan2(dy, dx) * 180/Math.PI; // -180..180, 0 along +X
+    // convert so 0 is closed, increasing as player lifts up/over
+    a = Math.max(0, Math.min(165, a<0 ? a+360 : a)); // clamp 0..165
+    return a;
+  }
+  flap.addEventListener('pointerdown', e=>{
+    flap.setPointerCapture(e.pointerId);
+    dragging=true; startAng = angleFromPointer(e);
+  });
+  flap.addEventListener('pointermove', e=>{
+    if(!dragging) return;
+    const a = angleFromPointer(e);
+    flap.style.transform = `rotate(${a}deg)`;
+    if(a>70 && !p0.opened){
+      p0.opened = true;
+      needle.classList.add('visible');
+      // Once opened enough, focus shifts to the needle
+      setTimeout(()=>setupNeedleHold(), 200);
+    }
+  });
+  flap.addEventListener('pointerup', ()=>dragging=false);
+  flap.addEventListener('pointercancel', ()=>dragging=false);
+
+  // ---- Needle long press (8s) ----
+  function setupNeedleHold(){
+    const b = document.getElementById('batbox');
+    const nr = needle.getBoundingClientRect();
+    // Tip position relative to needle art (rightward spike): ~86% x, ~50% y
+    const tipX = nr.left + nr.width*0.86;
+    const tipY = nr.top  + nr.height*0.50;
+    const zone = document.createElement('div'); zone.className='tipZone'; zone.style.left=(tipX-22 - b.getBoundingClientRect().left)+'px'; zone.style.top=(tipY-22 - b.getBoundingClientRect().top)+'px';
+    const ui = document.createElement('div'); ui.className='holdUI';
+    ui.innerHTML = `<svg class="holdRing" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44"></circle></svg><span style="z-index:1">0%</span>`;
+    zone.appendChild(ui); b.appendChild(zone);
+    const circle = ui.querySelector('circle'); const label = ui.querySelector('span');
+
+    let t0=0, held=false, rafId=null, showHoldNote=false;
+    const RADIUS = 16; // drift tolerance
+    function inside(x,y){ return Math.hypot(x-tipX, y-tipY) <= RADIUS; }
+
+    function reset(){ held=false; t0=0; circle.style.strokeDashoffset=276; label.textContent='0%'; log(''); }
+
+    zone.addEventListener('pointerdown', e=>{
+      zone.setPointerCapture(e.pointerId);
+      if(!inside(e.clientX,e.clientY)) return;
+      held=true; const start = performance.now();
+      t0=start; showHoldNote=false;
+      function step(now){
+        if(!held){ cancelAnimationFrame(rafId); return; }
+        const ms = now - start;
+        const secs = ms/1000;
+        const pct = Math.min(100, Math.floor(secs/8*100));
+        circle.style.strokeDashoffset = 276*(1 - pct/100);
+        label.textContent = pct+'%';
+        if(secs>=2 && !showHoldNote){ log('hold still'); showHoldNote=true; }
+        if(secs>=8){
+          held=false; p0.done=true; log('The drawer slides somewhere below…');
+          revealDrawerLip(); // show lip in main UI
+          slideSfx();
+          // do NOT close overlay; player exits manually, sees lip
+          cancelAnimationFrame(rafId); return;
+        }
+        rafId = requestAnimationFrame(step);
+      }
+      rafId = requestAnimationFrame(step);
+    });
+    zone.addEventListener('pointermove', e=>{
+      if(!held) return;
+      if(!inside(e.clientX,e.clientY)){ held=false; cancelAnimationFrame(rafId); log(''); circle.style.strokeDashoffset=276; label.textContent='0%'; }
+    });
+    zone.addEventListener('pointerup', ()=>{ held=false; cancelAnimationFrame(rafId); });
+    zone.addEventListener('pointercancel', ()=>{ held=false; cancelAnimationFrame(rafId); });
+  }
+
+  // If player already solved earlier, make sure the needle is visible and ring disabled
+  if(p0.done){ needle.classList.add('visible'); }
+}
+
+/* =================================================================
+   Existing puzzles (same as before; trimmed only where needed)
+   ================================================================= */
 const SYMBOLS = ['MOON','BAT','HIBISCUS','TORCH','COCONUT','FANG','WAVE'];
 const p1 = {heads:[0,0,0,0], solution:['MOON','WAVE','FANG','HIBISCUS']};
 function renderP1(){
@@ -471,15 +540,10 @@ function renderP1(){
 }
 function checkP1(){
   const ok = p1.heads.every((v,i)=>SYMBOLS[v]===p1.solution[i]);
-  if(ok){
-    state.flags.p1=true;
-    addItem('lens','Obsidian Lens');
-    log('A hatch opens. You take an Obsidian Lens and a rune plate (Gold → Teal → Crimson).');
-    closeOverlay();
-  }
+  if(ok){ state.flags.p1=true; addItem('lens','Obsidian Lens'); log('A hatch opens. You take an Obsidian Lens and a rune plate (Gold → Teal → Crimson).'); closeOverlay(); }
 }
 
-/* P2 — Prism (unchanged except visuals) */
+/* P2 — Prism */
 const p2 = {A:0,B:0,C:0, target:{A:315,B:180,C:45}, placed:false};
 function renderP2(){
   lastPanel='p2'; openOverlay();
@@ -487,7 +551,7 @@ function renderP2(){
   panel.innerHTML = `
     <h3>Sunbeam Prism</h3>
     <p>${active? 'Place the lens, then rotate mirrors A–C so the beam hits Gold → Teal → Crimson.' :
-      'You need a lens. (Tip: it may be hiding in the totem.)'}</p>
+      'You need a lens. (Tip: it may be hiding in a hidden drawer.)'}</p>
     <div class="row" id="p2row"></div>
     <div class="row"><button id="placeLens"${(!active||p2.placed)?' disabled':''}>Insert Obsidian Lens</button></div>
     <svg id="beam" viewBox="0 0 300 20" aria-hidden="true">
@@ -504,37 +568,25 @@ function renderP2(){
   ['A','B','C'].forEach(id=>{
     const m = document.createElement('button'); m.className='mirror'; m.dataset.id=id; m.dataset.deg=p2[id];
     m.onclick=()=>{ if(!p2.placed) return log('The socket is empty.');
-      blip(400+p2[id],0.05,'square'); p2[id]=(p2[id]+45)%360; m.dataset.deg=p2[id];
+      blip(400+p2[id],0.05,'square'); p2[id] = (p2[id]+45)%360; m.dataset.deg=p2[id];
       paintMirrors(); updateBeam(); checkP2();
     };
     const label = document.createElement('div'); label.style.position='absolute'; label.style.bottom='-22px'; label.style.fontSize='12px'; label.textContent=id;
     m.appendChild(label); row.appendChild(m);
   });
-  document.getElementById('placeLens').onclick=()=>{
-    if(armedItem==='lens' || has('lens')){ p2.placed=true; state.lensesPlaced=true; log('Lens seated. A thin beam awakens.'); paintMirrors(); updateBeam(); }
-  };
+  document.getElementById('placeLens').onclick=()=>{ if(armedItem==='lens' || has('lens')){ p2.placed=true; state.lensesPlaced=true; log('Lens seated. A thin beam awakens.'); paintMirrors(); updateBeam(); } };
   paintMirrors(); updateBeam();
 }
-function paintMirrors(){
-  panel.querySelectorAll('.mirror').forEach(m=>{
-    const id=m.dataset.id; m.classList.toggle('ok', p2.placed && p2[id]===p2.target[id]);
-  });
-}
+function paintMirrors(){ panel.querySelectorAll('.mirror').forEach(m=>{ const id=m.dataset.id; m.classList.toggle('ok', p2.placed && p2[id]===p2.target[id]); }); }
 function updateBeam(){
-  const path = panel.querySelector('#beamPath'); if(!path) return;
-  let off = 320;
+  const path = panel.querySelector('#beamPath'); if(!path) return; let off=320;
   if(p2.placed){ if(p2.A===315) off=220; if(p2.A===315 && p2.B===180) off=120; if(p2.A===315 && p2.B===180 && p2.C===45) off=0; }
   path.style.strokeDashoffset = off;
 }
 function checkP2(){
-  if(p2.placed && p2.A===315 && p2.B===180 && p2.C===45){
-    if(!state.flags.p2){
-      state.flags.p2=true;
-      addItem('fangKey','Bat Fang Key');
-      addItem('tideChip','Tide Chip');
-      log('Crimson window flips. You obtain a Bat Fang Key and a Tide Chip.');
-      closeOverlay();
-    }
+  if(p2.placed && p2.A===315 && p2.B===180 && p2.C===45 && !state.flags.p2){
+    state.flags.p2=true; addItem('fangKey','Bat Fang Key'); addItem('tideChip','Tide Chip');
+    log('Crimson window flips. You obtain a Bat Fang Key and a Tide Chip.'); closeOverlay();
   }
 }
 
@@ -564,8 +616,7 @@ function renderP3(){
     const btn = document.getElementById('enterBtn');
     inp.disabled=false; btn.disabled=false;
     btn.onclick=()=>{
-      if(inp.value===code){
-        state.flags.p3=true; addItem('drumsticks','Drumsticks'); log('Drawer opens. Drumsticks and a second rune strip slide out.'); closeOverlay();
+      if(inp.value===code){ state.flags.p3=true; addItem('drumsticks','Drumsticks'); log('Drawer opens. Drumsticks and a second rune strip slide out.'); closeOverlay();
       } else { log('The lock shudders and stays closed.'); blip(200,0.2,'sawtooth',0.02); }
     }
   }
@@ -576,16 +627,9 @@ function renderP3(){
 const p4 = { seq:[1,3,2,4,4,2,3,1], progress:0 };
 function renderP4(){
   lastPanel='p4'; openOverlay();
-  panel.innerHTML=`
-    <h3>Coconut Drums</h3>
-    <p>Hold the Drumsticks from inventory, then play the rhythm.</p>
-    <div class="row" id="drums"></div>`;
+  panel.innerHTML=`<h3>Coconut Drums</h3><p>Hold the Drumsticks from inventory, then play the rhythm.</p><div class="row" id="drums"></div>`;
   const row=document.getElementById('drums');
-  for(let i=1;i<=4;i++){
-    const d=document.createElement('button'); d.className='drum'; d.textContent=i;
-    d.onclick=()=>hitDrum(i,d);
-    row.appendChild(d);
-  }
+  for(let i=1;i<=4;i++){ const d=document.createElement('button'); d.className='drum'; d.textContent=i; d.onclick=()=>hitDrum(i,d); row.appendChild(d); }
 }
 function hitDrum(i, el){
   if(!has('drumsticks')){ log('You need Drumsticks.'); return; }
@@ -593,8 +637,7 @@ function hitDrum(i, el){
   blip(220+80*i,0.06,'triangle',0.04);
   if(p4.seq[p4.progress]===i){
     p4.progress++;
-    if(p4.progress===p4.seq.length){
-      state.flags.p4=true; addItem('conch','Conch Shell'); addItem('salt','Silvered Salt');
+    if(p4.progress===p4.seq.length){ state.flags.p4=true; addItem('conch','Conch Shell'); addItem('salt','Silvered Salt');
       p4.progress=0; log('A woven flap drops open. You take a Conch Shell and Silvered Salt.'); closeOverlay();
     } else { log('Beat '+p4.progress+' / '+p4.seq.length); }
   } else { p4.progress=0; log('The rhythm falters. Start again.'); }
@@ -608,9 +651,7 @@ function renderP5(){
   panel.innerHTML = `
     <h3>Blood Oath Cipher Wheel</h3>
     <div class="wheel" aria-label="Cipher wheel">
-      <div class="ring outer"></div>
-      <div class="ring inner"></div>
-      <div class="mark"></div>
+      <div class="ring outer"></div><div class="ring inner"></div><div class="mark"></div>
       <div class="keyhole"><button id="alignBtn"${canUse?'':' disabled'}>Insert Fang & Align Flower ↔ H</button></div>
     </div>
     <div class="row"><input id="phrase" size="20" placeholder="decoded phrase" disabled>
@@ -618,68 +659,45 @@ function renderP5(){
     <p>${canUse?'':'The central keyhole is empty. (A fang-shaped key would help.)'}</p>`;
   document.getElementById('alignBtn').onclick=()=>{
     p5.aligned=true; blip(300,0.1,'square'); setTimeout(()=>blip(500,0.1,'square'),100);
-    document.getElementById('phrase').disabled=false;
-    document.getElementById('submitPhrase').disabled=false;
+    document.getElementById('phrase').disabled=false; document.getElementById('submitPhrase').disabled=false;
     log('Rings click into place (Flower over H). Twelve windows glow.');
   };
   document.getElementById('submitPhrase').onclick=()=>{
     const v=document.getElementById('phrase').value.replace(/\s+/g,'').toUpperCase();
     if(!p5.aligned) return;
-    if(v==='DRINKTHEDAWN'){
-      state.flags.p5=true; log('A latch clicks; a braided panel underneath loosens.'); blip(660,0.12,'sine'); setTimeout(()=>blip(990,0.12,'sine'),120);
-      closeOverlay();
+    if(v==='DRINKTHEDAWN'){ state.flags.p5=true; log('A latch clicks; a braided panel underneath loosens.'); blip(660,0.12,'sine'); setTimeout(()=>blip(990,0.12,'sine'),120); closeOverlay();
     } else { log('The wheel hisses; that vow is wrong.'); blip(160,0.2,'sawtooth',0.02); }
   };
 }
 
 /* P6 — Tapa knot */
-const p6 = { seq:[4,6,9,2,11,8,8,5,4,1,11,2], clicks:[], points:[] };
+const p6 = { seq:[4,6,9,2,11,8,8,5,4,1,11,2], clicks:[] };
 function renderP6(){
   lastPanel='p6'; openOverlay();
   if(!state.flags.p5){ panel.innerHTML='<h3>Tapa Knot</h3><p>The plaque reads: “Bind the oath.” Something above must be done first.</p>'; return; }
-  panel.innerHTML=`
-    <h3>Tapa Knot</h3>
+  panel.innerHTML=`<h3>Tapa Knot</h3>
     <div class="tapa" id="tapa">
       <svg class="rope" viewBox="0 0 100 100"><path id="ropePath" d=""></path></svg>
       <div class="nodes" id="nodes"></div>
     </div>
     <div class="row"><button id="resetKnot">Reset</button><button id="submitKnot" disabled>Tighten</button></div>`;
   const nodesEl = document.getElementById('nodes');
-  const R = 44, cx=50, cy=50;
-  for(let n=1;n<=12;n++){
-    const ang = (Math.PI*2)*(n-1)/12 - Math.PI/2;
-    const x = cx + R*Math.cos(ang), y = cy + R*Math.sin(ang);
-    const d = document.createElement('div'); d.className='node'; d.textContent=n;
-    d.style.left = `calc(${x}% - 13px)`; d.style.top = `calc(${y}% - 13px)`;
-    d.dataset.idx=n; d.onclick=()=>chooseNode(n); nodesEl.appendChild(d);
+  const R=44,cx=50,cy=50; for(let n=1;n<=12;n++){ const ang=(Math.PI*2)*(n-1)/12 - Math.PI/2; const x=cx+R*Math.cos(ang), y=cy+R*Math.sin(ang);
+    const d=document.createElement('div'); d.className='node'; d.textContent=n; d.style.left=`calc(${x}% - 13px)`; d.style.top=`calc(${y}% - 13px)`; d.onclick=()=>chooseNode(n); nodesEl.appendChild(d);
   }
   const path = document.getElementById('ropePath');
-  function chooseNode(n){
-    p6.clicks.push(n);
-    if(p6.clicks.length===p6.seq.length) document.getElementById('submitKnot').disabled=false;
-    draw();
-  }
+  function chooseNode(n){ p6.clicks.push(n); if(p6.clicks.length===p6.seq.length) document.getElementById('submitKnot').disabled=false; draw(); }
   document.getElementById('resetKnot').onclick=()=>{ p6.clicks=[]; draw(); document.getElementById('submitKnot').disabled=true; };
   document.getElementById('submitKnot').onclick=()=>{
-    if(p6.clicks.join(',')===p6.seq.join(',')){
-      state.flags.p6=true; addItem('petalPlate','Petal Order Plate'); addItem('obsidianKey','Obsidian Key Stem');
-      log('The mat tightens; a wooden slide lifts. You take a Petal Order Plate and the Obsidian Key Stem.');
-      closeOverlay();
+    if(p6.clicks.join(',')===p6.seq.join(',')){ state.flags.p6=true; addItem('petalPlate','Petal Order Plate'); addItem('obsidianKey','Obsidian Key Stem');
+      log('The mat tightens; a wooden slide lifts. You take a Petal Order Plate and the Obsidian Key Stem.'); closeOverlay();
     } else { log('The weave loosens—the stitch is wrong.'); p6.clicks=[]; draw(); document.getElementById('submitKnot').disabled=true; blip(160,0.2,'sawtooth',0.02); }
   };
   function draw(){
-    const nodes = [...document.querySelectorAll('.node')];
-    nodes.forEach(n=>n.classList.remove('active')); let d = '';
-    p6.clicks.forEach((n,i)=>{ nodes[n-1].classList.add('active'); });
-    const box = nodesEl.getBoundingClientRect();
-    const pts = p6.clicks.map(n=>{
-      const r = nodes[n-1].getBoundingClientRect();
-      const x = ((r.left + r.width/2) - box.left)/box.width*100;
-      const y = ((r.top + r.height/2) - box.top)/box.height*100;
-      return [x,y];
-    });
-    pts.forEach((pt,i)=>{ d += (i? ' L':'M') + pt[0].toFixed(2)+','+pt[1].toFixed(2); });
-    path.setAttribute('d', d);
+    const nodes=[...document.querySelectorAll('.node')]; nodes.forEach(n=>n.classList.remove('active'));
+    let d=''; const box=nodesEl.getBoundingClientRect();
+    const pts=p6.clicks.map(n=>{ const r=nodes[n-1].getBoundingClientRect(); const x=((r.left+r.width/2)-box.left)/box.width*100; const y=((r.top+r.height/2)-box.top)/box.height*100; nodes[n-1].classList.add('active'); return [x,y];});
+    pts.forEach((pt,i)=>{ d+=(i?' L':'M')+pt[0].toFixed(2)+','+pt[1].toFixed(2); }); path.setAttribute('d', d);
   }
 }
 
@@ -700,54 +718,48 @@ function renderP7(){
     </div>
     <div class="row">
       <button id="insertKey"${has('obsidianKey')?'':' disabled'}>${p7.key?'Key Inserted':'Insert Obsidian Key'}</button>
-      <button id="rot0">Ring 0°</button><button id="rot60">60°</button><button id="rot120">120°</button>
+      <button id="rot0">0°</button><button id="rot60">60°</button><button id="rot120">120°</button>
       <button id="rot180">180°</button><button id="rot240">240°</button><button id="rot300">300°</button>
     </div>`;
   document.getElementById('insertKey').onclick=()=>{ p7.key=true; blip(420,0.08,'square'); log('The key seats with a comforting click.'); };
   ['rot0','rot60','rot120','rot180','rot240','rot300'].forEach(id=>{
-    document.getElementById(id).onclick=()=>{ p7.ring = parseInt(id.replace('rot','')); document.getElementById('ring6').style.transform=`rotate(${p7.ring}deg)`; document.querySelector('.ringLabel').textContent=p7.ring+'°'; blip(260+p7.ring,0.04,'triangle'); };
+    document.getElementById(id).onclick=()=>{ p7.ring=parseInt(id.replace('rot','')); document.getElementById('ring6').style.transform=`rotate(${p7.ring}deg)`; document.querySelector('.ringLabel').textContent=p7.ring+'°'; blip(260+p7.ring,0.04,'triangle'); };
   });
-  panel.querySelectorAll('.petal').forEach(b=>b.onclick=()=>pressPetal(+b.dataset.i, b));
+  panel.querySelectorAll('.petal').forEach(b=>b.onclick=()=>pressPetal(+b.dataset.i,b));
 }
 function pressPetal(i, el){
-  const step = p7.seq[p7.step];
-  if(!p7.key){ log('Nothing engages—the center needs a key.'); return; }
+  const step=p7.seq[p7.step]; if(!p7.key){ log('Nothing engages—the center needs a key.'); return; }
   el.animate([{transform:'scale(1)'},{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:120});
-  if (i===step.petal && p7.ring===step.deg){
-    p7.step++; blip(700,0.06,'sine'); log(`Petal ${i} accepts (${p7.step}/${p7.seq.length}).`);
-    if (p7.step===p7.seq.length) openFinal();
-  } else { p7.step=0; blip(180,0.12,'sawtooth',0.02); log('Veins misalign; the rosette resets.'); }
+  if(i===step.petal && p7.ring===step.deg){ p7.step++; blip(700,0.06,'sine'); log(`Petal ${i} accepts (${p7.step}/${p7.seq.length}).`); if(p7.step===p7.seq.length) openFinal(); }
+  else { p7.step=0; blip(180,0.12,'sawtooth',0.02); log('Veins misalign; the rosette resets.'); }
 }
 function openFinal(){
   state.flags.p7=true; closeOverlay();
-  const img = new Image(); img.src='artifact.png'; img.alt='Obsidian Hibiscus Flower'; img.style.position='absolute';
-  img.style.width='220px'; img.style.left='50%'; img.style.top='22%'; img.style.transform='translate(-50%, -50%)';
-  img.style.filter='drop-shadow(0 40px 80px rgba(255,255,255,.25))'; document.getElementById('scene').appendChild(img);
-  sparkle(img); sparkle(img);
-  log('The top cap irises open; the Obsidian Hibiscus rises, faintly shimmering.');
+  const img = new Image(); img.src='artifact.png'; img.alt='Obsidian Hibiscus Flower'; Object.assign(img.style,{position:'absolute',width:'220px',left:'50%',top:'22%',transform:'translate(-50%, -50%)',filter:'drop-shadow(0 40px 80px rgba(255,255,255,.25))'}); scene.appendChild(img);
+  sparkle(img); sparkle(img); log('The top cap irises open; the Obsidian Hibiscus rises, faintly shimmering.');
 }
 
 /* Router */
 function openPuzzle(id){
+  if(id==='p0') renderP0();
   if(id==='p1') renderP1();
-  if(id==='p2') { if(!state.flags.p1){ log('The top face hums quietly. Something from the front might fit here.'); return; } renderP2(); }
-  if(id==='p3') { renderP3(); }
-  if(id==='p4') { if(!state.flags.p3){ log('The drumheads are silent. Perhaps a gift from the tides first.'); return; } renderP4(); }
-  if(id==='p5') { renderP5(); }
-  if(id==='p6') { renderP6(); }
-  if(id==='p7') { renderP7(); }
+  if(id==='p2'){ if(!has('lens')){ log('A dark socket awaits a lens. Perhaps check the drawer lip above the toolbar.'); return; } renderP2(); }
+  if(id==='p3') renderP3();
+  if(id==='p4'){ if(!state.flags.p3){ log('The drumheads are silent. Perhaps a gift from the tides first.'); return; } renderP4(); }
+  if(id==='p5') renderP5();
+  if(id==='p6') renderP6();
+  if(id==='p7') renderP7();
 }
 
-/* Keyboard */
+/* Keyboard helpers */
 document.addEventListener('keydown',e=>{
   if(e.key==='ArrowLeft') setFaceByIndex(currentFaceIndex-1);
   if(e.key==='ArrowRight') setFaceByIndex(currentFaceIndex+1);
   if(e.key==='Escape' && overlay.classList.contains('active')) closeOverlay();
-  if(e.key.toLowerCase()==='d') openMainDrawerHalf(); // TEMP: demo the drawer until P0 is wired
 });
 
 /* boot */
-setFaceByIndex(0); updateCube();
+setFaceByIndex(0); updateCube(); measureDrawer();
 </script>
 </body>
 </html>
