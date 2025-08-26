@@ -109,16 +109,22 @@
   .hud{ position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85; z-index:5 }
 
   /* Drawer (hidden until success) */
-  #drawer{ position:absolute; left:50%; transform:translateX(-50%); bottom:calc(var(--toolbarH) - 2px); width:min(520px,70vw); height:180px; z-index:6; pointer-events:auto; display:none; }
-  #drawer .tray{ position:absolute; left:0; bottom:0; width:100%; height:100%; background:url('inlet.png') center/contain no-repeat; transform:translateY(100%); will-change:transform; }
-  .grab{ position:absolute; inset:0; cursor:grab; }  #drawer.dragging .grab{ cursor:grabbing; }
- #lensLoot{ 
-  position:absolute; left:50%; top:46%; transform:translate(-50%,-50%);
-  width:120px; filter:drop-shadow(0 10px 20px rgba(0,0,0,.5));
-  opacity:.25;              /* faintly visible already */
-  transition:opacity .2s;
-  pointer-events:none;
+ #drawer{
+  position:absolute; left:50%; transform:translateX(-50%);
+  bottom:calc(var(--toolbarH) - 2px);
+  width:min(640px,78vw);          /* wider */
+  height:220px;                   /* taller */
+  z-index:6; pointer-events:auto; display:none;
 }
+  #drawer .tray{ position:absolute; left:0; bottom:0; width:100%; height:100%; background:url('inlet.png') center/contain no-repeat; transform:translateY(100%); will-change:transform; }
+  .grab{
+  position:absolute; inset:0;
+  cursor:grab;
+  z-index:5;                  /* sits above lens so you can always grab */
+}
+#drawer.dragging .grab{ cursor:grabbing; }
+/* when fully open, let the user click the lens — disable the grab layer */
+#drawer.open .grab{ pointer-events:none; }
 #drawer.open #lensLoot{
   opacity:1;                /* fully visible when drawer open */
   pointer-events:auto; 
