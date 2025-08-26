@@ -6,22 +6,21 @@
 <title>Obsidian Hibiscus — Puzzle Box</title>
 <style>
   :root{
-    --ui:#c7b07c;
-    --accent:#3bd0c7; /* teal */
-    --obs:#111;
-    --ink:#0a0a0a;
-    --gold:#d9b25f;
-    --crimson:#a22;
-    --indigo:#3744a3;
-    --cube:44vmin;
-    --half:calc(var(--cube)/2);
+    --ui:#c7b07c; --accent:#3bd0c7; --obs:#111; --ink:#0a0a0a;
+    --gold:#d9b25f; --crimson:#a22; --indigo:#3744a3;
+    --cube:44vmin; --half:calc(var(--cube)/2);
   }
   html,body{height:100%;margin:0;background:#0b0b0b;color:#e6e0d4;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
   #game{position:relative;min-height:100%;overflow:hidden;}
   #scene{
     height:62vh; min-height:420px; max-height:70vh;
-    display:grid; place-items:center;
+    display:grid; place-items:center; position:relative;
     background: radial-gradient(ellipse at center, #151515 0%, #0c0c0c 60%, #080808 100%);
+  }
+  /* soft vignette */
+  #scene::after{
+    content:""; position:absolute; inset:-10% -10% -10% -10%;
+    pointer-events:none; background:radial-gradient(circle at 50% 40%, transparent 40%, rgba(0,0,0,.5) 80%, rgba(0,0,0,.75) 100%);
   }
   #pedestal{
     position:absolute; inset:auto 0 2vh 0; height:7vh; display:grid; place-items:center;
@@ -31,32 +30,33 @@
 
   /* Cube */
   #cubeWrap{
-    perspective:1100px;
-    transform-style:preserve-3d;           /* keep 3D context */
-    -webkit-transform-style:preserve-3d;
+    perspective:1100px; transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
     width:min(90vw,1100px); height:100%; display:grid; place-items:center;
   }
-  /* Apply shadow to a wrapper, not the 3D element */
+  /* shadow must NOT be on the 3D element */
   #cubeShadow{ filter: drop-shadow(0 30px 60px #000); }
 
   #cube{
     position:relative; width:var(--cube); height:var(--cube);
-    transform-style:preserve-3d;
-    -webkit-transform-style:preserve-3d;   /* webkit quirk */
-    transition:transform .6s cubic-bezier(.2,.8,.2,1);
-    will-change:transform;
+    transform-style:preserve-3d; -webkit-transform-style:preserve-3d;
+    transition:transform .6s cubic-bezier(.2,.8,.2,1); will-change:transform;
+    /* live light position from JS (percent) */
+    --hx:50%; --hy:40%;
   }
   .face{
     position:absolute; inset:0; display:grid; place-items:center; user-select:none;
     background:#111 url('boxTexture.png') center/cover no-repeat;
     border:1px solid #000; box-shadow: inset 0 0 60px rgba(0,0,0,.7);
-    backface-visibility:hidden;
-    -webkit-backface-visibility:hidden;
+    backface-visibility:hidden; -webkit-backface-visibility:hidden;
   }
+  /* moving highlight that tracks the cursor */
   .face::after{
     content:""; position:absolute; inset:0;
-    background:radial-gradient(120% 120% at 50% 50%, transparent 60%, rgba(255,255,255,.04) 100%);
+    background:
+      radial-gradient(120% 120% at var(--hx) var(--hy), rgba(255,255,255,.06) 0%, transparent 55%),
+      radial-gradient(200% 200% at 50% 50%, transparent 60%, rgba(255,255,255,.025) 100%);
     pointer-events:none;
+    transition:background-position .1s linear;
   }
   .front{  transform: translateZ(var(--half)); }
   .back{   transform: rotateY(180deg) translateZ(var(--half));}
@@ -68,13 +68,11 @@
   .face button, .ui button{ cursor:pointer; background:#201e1a; color:var(--ui); border:1px solid #514530; border-radius:.35rem; padding:.5rem .75rem; }
   .face button:hover, .ui button:hover{ background:#2a2722; }
   .face .hot{ position:absolute; inset:auto; width:60%; height:60%; border-radius:1rem; outline:2px solid rgba(255,255,255,.04); }
+  .face .hot:hover{ outline-color:rgba(217,178,95,.35); box-shadow:0 0 12px rgba(217,178,95,.25) inset; }
   .face h2{color:#e6e0d4;text-shadow:0 2px 0 #000; font-weight:600; letter-spacing:.02em}
 
-  /* Zoom overlay (per-face puzzle UIs) */
-  #overlay{
-    position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f);
-    z-index:10;
-  }
+  /* Overlay (puzzle UIs) */
+  #overlay{ position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; }
   #overlay.active{ display:grid; }
   .panel{
     width:min(940px,95vw); max-height:92vh; overflow:auto;
@@ -84,9 +82,11 @@
   .panel h3{margin:.2rem 0 1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase}
   .panel .row{ display:flex; gap:16px; flex-wrap:wrap; align-items:center; justify-content:center;}
   .glyph, .dial, .mirror, .drum, .node, .petal{ user-select:none; }
-  .glyph{ width:82px; height:82px; display:grid; place-items:center; border:1px solid #3b3122; border-radius:10px; background:#191818; box-shadow:inset 0 0 20px rgba(0,0,0,.6);}
+  .glyph{ width:82px; height:82px; display:grid; place-items:center; border:1px solid #3b3122; border-radius:10px; background:#191818; box-shadow:inset 0 0 20px rgba(0,0,0,.6); transition:transform .06s ease; }
+  .glyph:active{ transform:scale(0.96); }
   .glyph.good{ outline:2px solid #31c758; }
-  .mirror{ width:90px; height:90px; border-radius:50%; border:1px solid #40351f; background:#101010; display:grid; place-items:center; position:relative;}
+  .mirror{ width:90px; height:90px; border-radius:50%; border:1px solid #40351f; background:#101010; display:grid; place-items:center; position:relative; transition:box-shadow .2s; }
+  .mirror.ok{ box-shadow:0 0 18px rgba(217,178,95,.35), inset 0 0 20px rgba(255,255,255,.05); }
   .mirror::before{content:"▲"; color:#a88; font-size:26px; transform:rotate(0deg); transition:transform .2s;}
   .mirror[data-deg="45"]::before{ transform:rotate(45deg);}
   .mirror[data-deg="90"]::before{ transform:rotate(90deg);}
@@ -99,9 +99,12 @@
   .dial{ width:84px; height:84px; border-radius:50%; background:#151515; border:1px solid #42361d; display:grid; place-items:center; }
   .dial span{font-size:14px; opacity:.85}
 
-  .drum{ width:120px; height:120px; border-radius:999px; background:#3b2b16; border:2px solid #5b4121;
-         box-shadow:inset 0 10px 30px rgba(0,0,0,.6);}
+  .drum{ width:120px; height:120px; border-radius:999px; background:#3b2b16; border:2px solid #5b4121; box-shadow:inset 0 10px 30px rgba(0,0,0,.6); }
   .drum:active{ filter:brightness(1.1); }
+
+  /* Prism beam */
+  #beam{ width:100%; height:44px; margin-top:6px; }
+  #beamPath{ stroke:url(#beamGrad); stroke-width:3; fill:none; stroke-dasharray:320; stroke-dashoffset:320; filter:drop-shadow(0 0 6px rgba(217,178,95,.35)); transition:stroke-dashoffset .35s ease; }
 
   .wheel{ position:relative; width:340px; height:340px; }
   .ring{ position:absolute; inset:0; border-radius:50%; border:2px solid #3a2e19; display:grid; place-items:center; }
@@ -119,15 +122,13 @@
   .rope path{ stroke:#d6c18b; stroke-width:4; fill:none; filter: drop-shadow(0 0 4px rgba(214,193,139,.4)); }
 
   .hibiscus{ position:relative; width:min(560px,86vw); height:min(560px,86vw); display:grid; place-items:center; }
-  .ring6{ position:absolute; width:260px; height:260px; border-radius:50%; border:2px solid #3b3122;
-          transform:rotate(0deg); transition:transform .25s ease; }
+  .ring6{ position:absolute; width:260px; height:260px; border-radius:50%; border:2px solid #3b3122; transform:rotate(0deg); transition:transform .25s ease; }
   .ringLabel{ position:absolute; top:-28px; color:#ccc; font-size:12px; left:50%; transform:translateX(-50%); }
   .petal{
     position:absolute; width:120px; height:120px; border-radius:18px; display:grid; place-items:center; color:#eee; font-weight:700;
     background:#151515; border:1px solid #3b3122; box-shadow:inset 0 0 40px rgba(0,0,0,.6);
   }
   .petal.good{ outline:2px solid #31c758;}
-  /* petals around ring */
   .p1{ transform:translate(-60px,-210px); background:linear-gradient(#221, #432); border-color:#5a4528}
   .p2{ transform:translate(170px,-120px); background:linear-gradient(#111,#223); }
   .p3{ transform:translate(170px,120px); background:linear-gradient(#102222,#173c3c); }
@@ -136,7 +137,7 @@
   .p6{ transform:translate(-290px,-120px); background:linear-gradient(#221, #432); }
   .clr-gold{ color:var(--gold); } .clr-teal{ color:var(--accent);} .clr-crimson{ color:var(--crimson);} .clr-indigo{ color:var(--indigo); }
 
-  /* UI: inventory + nav */
+  /* UI */
   .ui{ position:relative; padding:.5rem 1rem 1rem; background:linear-gradient(#0a0a0a, #0b0b0b); border-top:1px solid #1c1a15;}
   #inventory{ display:flex; gap:.5rem; padding:.5rem 0; min-height:52px; align-items:center; }
   .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4;}
@@ -146,8 +147,11 @@
   #log{ font-size:.9rem; color:#cbbd9a; opacity:.9; min-height:1.2em }
   .hud{position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85}
 
-  /* Back / close overlay button */
   #backBtn{ position:absolute; top:10px; left:10px; z-index:11 }
+
+  /* Sparkles */
+  .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
+  @keyframes pop{ 0%{opacity:0; transform:translate(var(--x),var(--y)) scale(.4)} 40%{opacity:1} 100%{opacity:0; transform:translate(calc(var(--x) * 2), calc(var(--y) * 2)) scale(.1)} }
 </style>
 </head>
 <body>
@@ -168,7 +172,7 @@
     <div id="pedestal"><img src="obsidian_placeholder.png" alt=""></div>
   </div>
 
-  <!-- Overlay (per-face puzzle UIs) -->
+  <!-- Overlay -->
   <button id="backBtn" hidden aria-label="Back">↩</button>
   <div id="overlay" aria-hidden="true">
     <div class="panel" id="panel"></div>
@@ -192,8 +196,21 @@
 </div>
 
 <script>
-/* ----------------------- Core camera / faces ----------------------- */
+/* ---------- tiny synth for UI blips ---------- */
+const AC = window.AudioContext || window.webkitAudioContext;
+const audio = AC ? new AC() : null;
+function blip(freq=520, dur=0.06, type='sine', gain=0.03){
+  if(!audio) return;
+  const o=audio.createOscillator(), g=audio.createGain();
+  o.type=type; o.frequency.value=freq; g.gain.value=gain;
+  o.connect(g); g.connect(audio.destination);
+  o.start(); o.stop(audio.currentTime+dur);
+}
+document.addEventListener('pointerdown', ()=>{ if(audio && audio.state==='suspended') audio.resume(); }, {once:true});
+
+/* ----------------------- Core camera / faces (+inertia & lighting) ----------------------- */
 const cube = document.getElementById('cube');
+const scene = document.getElementById('scene');
 const panel = document.getElementById('panel');
 const overlay = document.getElementById('overlay');
 const backBtn = document.getElementById('backBtn');
@@ -201,15 +218,29 @@ const logEl = document.getElementById('log');
 const hud = document.getElementById('hud');
 
 const faces = ['front','right','back','left','top','bottom'];
-let rotY = 0, rotX = 0, dragging=false, sx=0, sy=0;
+let rotY = 0, rotX = 0;
+let dragging=false, sx=0, sy=0;
+let vy=0, vx=0, raf=null, lastT=0;
 let currentFaceIndex = 0;
 
 function updateCube(){
   cube.style.transform = `rotateX(${rotX}deg) rotateY(${rotY}deg)`;
   hud.textContent = faces[currentFaceIndex].toUpperCase();
 }
-updateCube();
-
+function tick(t){
+  if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t;
+  rotY += vy*dt; rotX += vx*dt; vy *= 0.95; vx *= 0.95;
+  // clamp X a bit so we don't flip too far
+  rotX = Math.max(-89, Math.min(89, rotX));
+  updateFaceIndex(); updateCube();
+  if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;}
+}
+function updateFaceIndex(){
+  const faceAngles = {front:[0,0], right:[0,-90], back:[0,180], left:[0,90], top:[-90,0], bottom:[90,0]};
+  let min=1e9, idx=0, i=0;
+  for(const k of faces){const [tx,ty]=faceAngles[k]; const d=(tx-rotX)**2+(ty-rotY)**2; if(d<min){min=d; idx=i} i++;}
+  currentFaceIndex=idx;
+}
 function setFaceByIndex(idx){
   currentFaceIndex = (idx+faces.length)%faces.length;
   const f = faces[currentFaceIndex];
@@ -224,37 +255,38 @@ function setFaceByIndex(idx){
 document.getElementById('prevFace').onclick=()=>setFaceByIndex(currentFaceIndex-1);
 document.getElementById('nextFace').onclick=()=>setFaceByIndex(currentFaceIndex+1);
 
-cube.addEventListener('mousedown',e=>{ dragging=true; sx=e.clientX; sy=e.clientY; });
-window.addEventListener('mouseup',()=>dragging=false);
+cube.addEventListener('mousedown',e=>{
+  dragging=true; sx=e.clientX; sy=e.clientY;
+  if(raf){ cancelAnimationFrame(raf); raf=null; }
+});
+window.addEventListener('mouseup',()=>{
+  if(!dragging) return;
+  dragging=false; lastT=0; raf=requestAnimationFrame(tick);
+});
 window.addEventListener('mousemove',e=>{
   if(!dragging) return;
-  rotY += (e.clientX - sx)*0.2;
-  rotX -= (e.clientY - sy)*0.2;
+  const dx=e.clientX-sx, dy=e.clientY-sy;
+  rotY += dx*0.25; rotX -= dy*0.25;
+  vy = dx*0.15; vx = -dy*0.15;
   sx=e.clientX; sy=e.clientY;
-  // update face index from rotY/rotX for hud
-  const faceAngles = {front:[0,0], right:[0,-90], back:[0,180], left:[0,90], top:[-90,0], bottom:[90,0]};
-  // pick closest
-  let min=1e9, idx=0, i=0;
-  for (const k of faces){
-    const [tx,ty] = faceAngles[k]; const d=(tx-rotX)**2+(ty-rotY)**2; if(d<min){min=d; idx=i}
-    i++;
-  }
-  currentFaceIndex = idx;
-  updateCube();
+  updateFaceIndex(); updateCube();
+});
+/* live highlight position on the cube */
+scene.addEventListener('mousemove', e=>{
+  const r=scene.getBoundingClientRect();
+  const hx=((e.clientX-r.left)/r.width*100).toFixed(1)+'%';
+  const hy=((e.clientY-r.top)/r.height*100).toFixed(1)+'%';
+  cube.style.setProperty('--hx', hx); cube.style.setProperty('--hy', hy);
 });
 
 document.querySelectorAll('.hot').forEach(h=>{
-  h.addEventListener('click',()=>openPuzzle(h.dataset.open));
+  h.addEventListener('click',()=>{ blip(640,0.05,'triangle'); openPuzzle(h.dataset.open); });
 });
 
 /* ----------------------- Inventory ----------------------- */
 const inventoryEl = document.getElementById('inventory');
 let armedItem = null;
-const state = {
-  inventory: [],
-  flags:{p1:false,p2:false,p3:false,p4:false,p5:false,p6:false,p7:false},
-  lensesPlaced:false,
-};
+const state = { inventory: [], flags:{p1:false,p2:false,p3:false,p4:false,p5:false,p6:false,p7:false}, lensesPlaced:false };
 function addItem(id, label){
   if (state.inventory.includes(id)) return;
   state.inventory.push(id);
@@ -267,6 +299,8 @@ function addItem(id, label){
     armedItem=id; btn.classList.add('armed'); log('Holding '+label);
   }
   inventoryEl.appendChild(btn);
+  sparkle(btn);
+  blip(880,0.08,'sine'); setTimeout(()=>blip(1175,0.08,'sine'),120);
 }
 function has(id){ return state.inventory.includes(id); }
 
@@ -281,7 +315,7 @@ const hintMap = {
   p7:"Petals answer colors; veins must align."
 };
 let lastPanel = null;
-document.getElementById('hintBtn').onclick=()=>{ if(lastPanel) log(hintMap[lastPanel]); };
+document.getElementById('hintBtn').onclick=()=>{ if(lastPanel) log(hintMap[lastPanel]); blip(420,0.05,'square'); };
 const bgm = document.getElementById('bgm');
 document.getElementById('musicBtn').onclick=()=>{ if(bgm.paused) bgm.play(); else bgm.pause(); };
 
@@ -291,9 +325,21 @@ function closeOverlay(){ overlay.classList.remove('active'); overlay.setAttribut
 backBtn.onclick=closeOverlay;
 
 function log(msg){ logEl.textContent = msg; }
+function sparkle(target){
+  const r = target.getBoundingClientRect();
+  for(let i=0;i<10;i++){
+    const s=document.createElement('div'); s.className='spark';
+    s.style.left = (r.left + r.width/2 + (Math.random()-0.5)*40) + 'px';
+    s.style.top  = (r.top  + r.height/2 + (Math.random()-0.5)*20) + 'px';
+    s.style.setProperty('--x', (Math.random()*60-30)+'px');
+    s.style.setProperty('--y', (Math.random()*-60)+'px');
+    document.body.appendChild(s);
+    setTimeout(()=>s.remove(),600);
+  }
+}
 
 /* =================================================================
-   P1 — Tiki Totem Lock (front)  [solution: moon, wave, fang, hibiscus]
+   P1 — Tiki Totem Lock
    ================================================================= */
 const SYMBOLS = ['MOON','BAT','HIBISCUS','TORCH','COCONUT','FANG','WAVE'];
 const p1 = {heads:[0,0,0,0], solution:['MOON','WAVE','FANG','HIBISCUS']};
@@ -306,7 +352,7 @@ function renderP1(){
   const row = document.getElementById('totemRow');
   p1.heads.forEach((v,i)=>{
     const b = document.createElement('button'); b.className='glyph'; updateGlyph(b, i);
-    b.onclick=()=>{ p1.heads[i]=(p1.heads[i]+1)%7; updateGlyph(b,i); checkP1(); };
+    b.onclick=()=>{ blip(520,0.04,'triangle'); p1.heads[i]=(p1.heads[i]+1)%7; updateGlyph(b,i); checkP1(); };
     row.appendChild(b);
   });
   function updateGlyph(btn, i){
@@ -326,7 +372,7 @@ function checkP1(){
 }
 
 /* =================================================================
-   P2 — Sunbeam Prism (top) [A=315, B=180, C=45] with lens
+   P2 — Sunbeam Prism (A=315, B=180, C=45)
    ================================================================= */
 const p2 = {A:0,B:0,C:0, target:{A:315,B:180,C:45}, placed:false};
 function renderP2(){
@@ -337,20 +383,39 @@ function renderP2(){
     <p>${active? 'Place the lens, then rotate mirrors A–C so the beam hits Gold → Teal → Crimson.' :
       'You need a lens. (Tip: it may be hiding in the totem.)'}</p>
     <div class="row" id="p2row"></div>
-    <div class="row">
-      <button id="placeLens"${(!active||p2.placed)?' disabled':''}>Insert Obsidian Lens</button>
-    </div>`;
+    <div class="row"><button id="placeLens"${(!active||p2.placed)?' disabled':''}>Insert Obsidian Lens</button></div>
+    <svg id="beam" viewBox="0 0 300 20" aria-hidden="true">
+      <defs>
+        <linearGradient id="beamGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%"   stop-color="#d9b25f"/>
+          <stop offset="50%"  stop-color="#3bd0c7"/>
+          <stop offset="100%" stop-color="#a22"/>
+        </linearGradient>
+      </defs>
+      <path id="beamPath" d="M10 10 L110 10 L200 10 L290 10"></path>
+    </svg>`;
   const row = document.getElementById('p2row');
   ['A','B','C'].forEach(id=>{
     const m = document.createElement('button'); m.className='mirror'; m.dataset.id=id; m.dataset.deg=p2[id];
-    m.onclick=()=>{ if(!p2.placed) return log('The socket is empty.'); p2[id] = (p2[id]+45)%360; m.dataset.deg=p2[id]; checkP2(); };
+    m.onclick=()=>{ if(!p2.placed) return log('The socket is empty.'); blip(400+p2[id],0.05,'square'); p2[id] = (p2[id]+45)%360; m.dataset.deg=p2[id]; paintMirrors(); updateBeam(); checkP2(); };
     const label = document.createElement('div'); label.style.position='absolute'; label.style.bottom='-22px'; label.style.fontSize='12px'; label.textContent=id;
-    m.appendChild(label);
-    row.appendChild(m);
+    m.appendChild(label); row.appendChild(m);
   });
   document.getElementById('placeLens').onclick=()=>{
-    if(armedItem==='lens' || has('lens')){ p2.placed=true; state.lensesPlaced=true; log('Lens seated. A thin beam awakens.'); checkP2(); }
+    if(armedItem==='lens' || has('lens')){ p2.placed=true; state.lensesPlaced=true; log('Lens seated. A thin beam awakens.'); paintMirrors(); updateBeam(); }
   };
+  paintMirrors(); updateBeam();
+}
+function paintMirrors(){
+  panel.querySelectorAll('.mirror').forEach(m=>{
+    const id=m.dataset.id; m.classList.toggle('ok', p2.placed && p2[id]===p2.target[id]);
+  });
+}
+function updateBeam(){
+  const path = panel.querySelector('#beamPath'); if(!path) return;
+  let off = 320;
+  if(p2.placed){ if(p2.A===315) off=220; if(p2.A===315 && p2.B===180) off=120; if(p2.A===315 && p2.B===180 && p2.C===45) off=0; }
+  path.style.strokeDashoffset = off;
 }
 function checkP2(){
   if(p2.placed && p2.A===315 && p2.B===180 && p2.C===45){
@@ -365,7 +430,7 @@ function checkP2(){
 }
 
 /* =================================================================
-   P3 — Blood Tide Calendar (right)  [dials: new, first, full, last → code 0628]
+   P3 — Blood Tide Calendar (code 0628)
    ================================================================= */
 const PHASES = ['new','waxing','first','waxGib','full','waneGib','last','wane'];
 const p3 = { dials:[0,0,0,0], solution:[0,2,4,6], code:'0628', unlocked:false };
@@ -383,7 +448,7 @@ function renderP3(){
     const b = document.createElement('button'); b.className='dial'; b.dataset.i=i;
     const s = document.createElement('span'); s.textContent=PHASES[p3.dials[i]];
     b.appendChild(s);
-    b.onclick=()=>{ if(locked) return log('The dials are locked.'); p3.dials[i]=(p3.dials[i]+1)%8; s.textContent=PHASES[p3.dials[i]]; checkP3(); };
+    b.onclick=()=>{ if(locked) return log('The dials are locked.'); p3.dials[i]=(p3.dials[i]+1)%8; s.textContent=PHASES[p3.dials[i]]; blip(380+40*i,0.04,'triangle'); checkP3(); };
     dials.appendChild(b);
   }
   function enableCode(){
@@ -394,19 +459,19 @@ function renderP3(){
     btn.onclick=()=>{
       if(inp.value===code){
         state.flags.p3=true; addItem('drumsticks','Drumsticks'); log('Drawer opens. Drumsticks and a second rune strip slide out.'); closeOverlay();
-      } else { log('The lock shudders and stays closed.'); }
+      } else { log('The lock shudders and stays closed.'); blip(200,0.2,'sawtooth',0.02); }
     }
   }
-  function checkP3(){ // when solved, reveal digits and enable code
+  function checkP3(){
     const good = p3.dials.every((v,i)=>v===p3.solution[i]);
     if(good){ enableCode(); log('Digits glow: 0 6 2 8. Enter them in the lock.'); }
   }
 }
 
 /* =================================================================
-   P4 — Coconut Drum Rhythm (left)  [seq: 1,3,2,4,4,2,3,1]
+   P4 — Coconut Drum Rhythm
    ================================================================= */
-const p4 = { seq:[1,3,2,4,4,2,3,1], progress:0, armed:false };
+const p4 = { seq:[1,3,2,4,4,2,3,1], progress:0 };
 function renderP4(){
   lastPanel='p4'; openOverlay();
   panel.innerHTML=`
@@ -416,12 +481,14 @@ function renderP4(){
   const row=document.getElementById('drums');
   for(let i=1;i<=4;i++){
     const d=document.createElement('button'); d.className='drum'; d.textContent=i;
-    d.onclick=()=>hitDrum(i);
+    d.onclick=()=>hitDrum(i,d);
     row.appendChild(d);
   }
 }
-function hitDrum(i){
+function hitDrum(i, el){
   if(!has('drumsticks')){ log('You need Drumsticks.'); return; }
+  el.animate([{transform:'scale(1)'},{transform:'scale(1.06)'},{transform:'scale(1)'}],{duration:120});
+  blip(220+80*i,0.06,'triangle',0.04);
   if(p4.seq[p4.progress]===i){
     p4.progress++;
     if(p4.progress===p4.seq.length){
@@ -434,8 +501,7 @@ function hitDrum(i){
 }
 
 /* =================================================================
-   P5 — Blood Oath Cipher Wheel (back)
-   Align Flower ↔ H, then accept phrase DRINK THE DAWN
+   P5 — Blood Oath Cipher Wheel
    ================================================================= */
 const p5 = { aligned:false, phrase:'' };
 function renderP5(){
@@ -453,7 +519,7 @@ function renderP5(){
     <button id="submitPhrase" disabled>Unlock</button></div>
     <p>${canUse?'':'The central keyhole is empty. (A fang-shaped key would help.)'}</p>`;
   document.getElementById('alignBtn').onclick=()=>{
-    p5.aligned=true;
+    p5.aligned=true; blip(300,0.1,'square'); setTimeout(()=>blip(500,0.1,'square'),100);
     document.getElementById('phrase').disabled=false;
     document.getElementById('submitPhrase').disabled=false;
     log('Rings click into place (Flower over H). Twelve windows glow.');
@@ -462,13 +528,15 @@ function renderP5(){
     const v=document.getElementById('phrase').value.replace(/\s+/g,'').toUpperCase();
     if(!p5.aligned) return;
     if(v==='DRINKTHEDAWN'){
-      state.flags.p5=true; log('A latch clicks; a braided panel underneath loosens.'); closeOverlay();
-    } else log('The wheel hisses; that vow is wrong.');
+      state.flags.p5=true; log('A latch clicks; a braided panel underneath loosens.');
+      blip(660,0.12,'sine'); setTimeout(()=>blip(990,0.12,'sine'),120);
+      closeOverlay();
+    } else { log('The wheel hisses; that vow is wrong.'); blip(160,0.2,'sawtooth',0.02); }
   };
 }
 
 /* =================================================================
-   P6 — Tapa Knot Lock (bottom)  [node order: 4,6,9,2,11,8,8,5,4,1,11,2]
+   P6 — Tapa Knot Lock
    ================================================================= */
 const p6 = { seq:[4,6,9,2,11,8,8,5,4,1,11,2], clicks:[], points:[] };
 function renderP6(){
@@ -483,15 +551,12 @@ function renderP6(){
     <div class="row"><button id="resetKnot">Reset</button><button id="submitKnot" disabled>Tighten</button></div>`;
   const nodesEl = document.getElementById('nodes');
   const R = 44, cx=50, cy=50;
-  // place 12 nodes around circle
   for(let n=1;n<=12;n++){
     const ang = (Math.PI*2)*(n-1)/12 - Math.PI/2;
     const x = cx + R*Math.cos(ang), y = cy + R*Math.sin(ang);
     const d = document.createElement('div'); d.className='node'; d.textContent=n;
     d.style.left = `calc(${x}% - 13px)`; d.style.top = `calc(${y}% - 13px)`;
-    d.dataset.idx=n;
-    d.onclick=()=>chooseNode(n);
-    nodesEl.appendChild(d);
+    d.dataset.idx=n; d.onclick=()=>chooseNode(n); nodesEl.appendChild(d);
   }
   const path = document.getElementById('ropePath');
   function chooseNode(n){
@@ -503,25 +568,17 @@ function renderP6(){
   document.getElementById('submitKnot').onclick=()=>{
     if(p6.clicks.join(',')===p6.seq.join(',')){
       state.flags.p6=true; addItem('petalPlate','Petal Order Plate'); addItem('obsidianKey','Obsidian Key Stem');
-      log('The mat tightens; a wooden slide lifts. You take a Petal Order Plate and the Obsidian Key Stem.'); closeOverlay();
-    } else {
-      log('The weave loosens—the stitch is wrong.'); p6.clicks=[];
-      draw(); document.getElementById('submitKnot').disabled=true;
-    }
+      log('The mat tightens; a wooden slide lifts. You take a Petal Order Plate and the Obsidian Key Stem.');
+      closeOverlay();
+    } else { log('The weave loosens—the stitch is wrong.'); p6.clicks=[]; draw(); document.getElementById('submitKnot').disabled=true; blip(160,0.2,'sawtooth',0.02); }
   };
   function draw(){
     const nodes = [...document.querySelectorAll('.node')];
-    nodes.forEach(n=>n.classList.remove('active'));
-    let d = '';
-    p6.clicks.forEach((n,i)=>{
-      const node = nodes[n-1];
-      node.classList.add('active');
-    });
-    // Build path from node positions in panel space
+    nodes.forEach(n=>n.classList.remove('active')); let d = '';
+    p6.clicks.forEach((n,i)=>{ nodes[n-1].classList.add('active'); });
     const box = nodesEl.getBoundingClientRect();
     p6.points = p6.clicks.map(n=>{
-      const node = nodes[n-1];
-      const r = node.getBoundingClientRect();
+      const r = nodes[n-1].getBoundingClientRect();
       const x = ((r.left + r.width/2) - box.left)/box.width*100;
       const y = ((r.top + r.height/2) - box.top)/box.height*100;
       return [x,y];
@@ -532,11 +589,9 @@ function renderP6(){
 }
 
 /* =================================================================
-   P7 — Obsidian Hibiscus Bloom (final): insert key, press petals with ring angles.
-   Sequence: (0°,3) → (60°,1) → (180°,4) → (180°,3) → (300°,5) → (0°,6)
+   P7 — Obsidian Hibiscus Bloom
    ================================================================= */
-const p7 = { seq:[{petal:3,deg:0},{petal:1,deg:60},{petal:4,deg:180},{petal:3,deg:180},{petal:5,deg:300},{petal:6,deg:0}],
-             step:0, ring:0, key:false };
+const p7 = { seq:[{petal:3,deg:0},{petal:1,deg:60},{petal:4,deg:180},{petal:3,deg:180},{petal:5,deg:300},{petal:6,deg:0}], step:0, ring:0, key:false };
 function renderP7(){
   lastPanel='p7'; openOverlay();
   panel.innerHTML=`
@@ -552,38 +607,30 @@ function renderP7(){
     </div>
     <div class="row">
       <button id="insertKey"${has('obsidianKey')?'':' disabled'}>${p7.key?'Key Inserted':'Insert Obsidian Key'}</button>
-      <button id="rot0">Ring 0°</button>
-      <button id="rot60">60°</button>
-      <button id="rot120">120°</button>
-      <button id="rot180">180°</button>
-      <button id="rot240">240°</button>
-      <button id="rot300">300°</button>
-    </div>
-    <div class="row" id="finalRow"></div>`;
-  document.getElementById('insertKey').onclick=()=>{ p7.key=true; log('The key seats with a comforting click.'); };
+      <button id="rot0">Ring 0°</button><button id="rot60">60°</button><button id="rot120">120°</button>
+      <button id="rot180">180°</button><button id="rot240">240°</button><button id="rot300">300°</button>
+    </div>`;
+  document.getElementById('insertKey').onclick=()=>{ p7.key=true; blip(420,0.08,'square'); log('The key seats with a comforting click.'); };
   ['rot0','rot60','rot120','rot180','rot240','rot300'].forEach(id=>{
-    document.getElementById(id).onclick=()=>{ p7.ring = parseInt(id.replace('rot','')); document.getElementById('ring6').style.transform=`rotate(${p7.ring}deg)`; document.querySelector('.ringLabel').textContent=p7.ring+'°'; };
+    document.getElementById(id).onclick=()=>{ p7.ring = parseInt(id.replace('rot','')); document.getElementById('ring6').style.transform=`rotate(${p7.ring}deg)`; document.querySelector('.ringLabel').textContent=p7.ring+'°'; blip(260+p7.ring,0.04,'triangle'); };
   });
-  panel.querySelectorAll('.petal').forEach(b=>b.onclick=()=>pressPetal(+b.dataset.i));
+  panel.querySelectorAll('.petal').forEach(b=>b.onclick=()=>pressPetal(+b.dataset.i, b));
 }
-function pressPetal(i){
+function pressPetal(i, el){
   const step = p7.seq[p7.step];
   if(!p7.key){ log('Nothing engages—the center needs a key.'); return; }
+  el.animate([{transform:'scale(1)'},{transform:'scale(1.04)'},{transform:'scale(1)'}],{duration:120});
   if (i===step.petal && p7.ring===step.deg){
-    p7.step++;
-    log(`Petal ${i} accepts (${p7.step}/${p7.seq.length}).`);
+    p7.step++; blip(700,0.06,'sine'); log(`Petal ${i} accepts (${p7.step}/${p7.seq.length}).`);
     if (p7.step===p7.seq.length) openFinal();
-  } else {
-    p7.step=0; log('Veins misalign; the rosette resets.');
-  }
+  } else { p7.step=0; blip(180,0.12,'sawtooth',0.02); log('Veins misalign; the rosette resets.'); }
 }
 function openFinal(){
   state.flags.p7=true; closeOverlay();
-  // show the artifact hovering above the box
   const img = new Image(); img.src='artifact.png'; img.alt='Obsidian Hibiscus Flower'; img.style.position='absolute';
   img.style.width='220px'; img.style.left='50%'; img.style.top='22%'; img.style.transform='translate(-50%, -50%)';
-  img.style.filter='drop-shadow(0 40px 80px rgba(255,255,255,.25))';
-  document.getElementById('scene').appendChild(img);
+  img.style.filter='drop-shadow(0 40px 80px rgba(255,255,255,.25))'; document.getElementById('scene').appendChild(img);
+  sparkle(img); sparkle(img);
   log('The top cap irises open; the Obsidian Hibiscus rises, faintly shimmering.');
 }
 
@@ -606,7 +653,7 @@ document.addEventListener('keydown',e=>{
 });
 
 /* boot */
-setFaceByIndex(0);
+setFaceByIndex(0); updateCube();
 </script>
 </body>
 </html>
