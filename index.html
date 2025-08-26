@@ -238,7 +238,15 @@ let rotY=0, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0;
 function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}deg)`; }
 function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
 
-cube.addEventListener('pointerdown',e=>{ dragging=true; cube.setPointerCapture(e.pointerId); sx=e.clientX; sy=e.clientY; if(raf){cancelAnimationFrame(raf); raf=null;} });
+cube.addEventListener('pointerdown', e => {
+  // If the press starts on the bat hotspot, let that element handle it.
+  if (e.target.closest('.hot-bat')) return;
+
+  dragging = true;
+  if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
+  sx = e.clientX; sy = e.clientY;
+  if (raf){ cancelAnimationFrame(raf); raf = null; }
+});
 window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false; lastT=0; raf=requestAnimationFrame(tick); });
 window.addEventListener('pointermove',e=>{ if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy; rotY+=dx*0.25; rotX-=dy*0.25; vy=dx*0.15; vx=-dy*0.15; sx=e.clientX; sy=e.clientY; updateCube(); });
 
