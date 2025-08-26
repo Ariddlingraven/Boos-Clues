@@ -246,31 +246,42 @@ function renderP0(){
   const flash=document.getElementById('flashRed');
   const hmsg=document.getElementById('holdMsg');
   const msg=document.getElementById('p0msg');
+  const box=document.getElementById('batbox');
 
-  // Slide bat off-screen; reveal on transitionend (plus robust fallbacks)
-  bat.addEventListener('click', ()=>{
-    bat.classList.add('slide');
+  // Slide bat off-screen; reveal on transitionend (robust, delegated)
+const onBatClick = (e)=>{
+  if (!e.target.closest('#batImg')) return; // only respond if the bat itself was clicked
 
-    let revealed=false;
-    const reveal=()=>{
-      if(revealed) return;
-      revealed=true;
-      needle.classList.add('visible');
-      msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
-      placeTip(); zone.classList.add('on'); // pointer-events now active
-    };
+  // Force a reflow so the transform transition reliably fires:
+  // (prevents cases where class is added in same frame as element creation)
+  void bat.offsetHeight;
 
-    const onEnd=(e)=>{
-      // Safari sometimes reports different propertyNames; accept absence or transform
-      if(e && e.propertyName && e.propertyName!=='transform') return;
-      bat.removeEventListener('transitionend', onEnd);
-      bat.removeEventListener('webkitTransitionEnd', onEnd);
-      reveal();
-    };
-    bat.addEventListener('transitionend', onEnd, {once:true});
-    bat.addEventListener('webkitTransitionEnd', onEnd, {once:true});
-    setTimeout(reveal, 550); // hard fallback if transitionend never fires
-  }, {once:true});
+  bat.classList.add('slide');
+
+  let revealed=false;
+  const reveal=()=>{
+    if(revealed) return;
+    revealed=true;
+    needle.classList.add('visible');
+    msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
+    placeTip(); zone.classList.add('on'); // pointer-events now active
+  };
+
+  const onEnd=(ev)=>{
+    if(ev && ev.propertyName && ev.propertyName!=='transform') return;
+    box.removeEventListener('click', onBatClick);
+    bat.removeEventListener('transitionend', onEnd);
+    bat.removeEventListener('webkitTransitionEnd', onEnd);
+    reveal();
+  };
+
+  bat.addEventListener('transitionend', onEnd, {once:true});
+  bat.addEventListener('webkitTransitionEnd', onEnd, {once:true});
+  setTimeout(reveal, 600); // hard fallback
+};
+
+// Attach once to the container; reliable even if the child’s listener misbehaves
+box.addEventListener('click', onBatClick);
 
   function placeTip(){
     const box=document.getElementById('batbox').getBoundingClientRect();
