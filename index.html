@@ -109,7 +109,13 @@
   .hud{ position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85; z-index:5 }
 
   /* Drawer (hidden until success) */
-  #drawer .tray{ position:absolute; left:0; bottom:0; width:100%; height:100%; background:url('inlet.png') center/contain no-repeat; transform:translateY(100%); will-change:transform; }
+  #drawer .tray{
+  position:absolute; left:0; bottom:0; width:100%; height:100%;
+  background:url('inlet.png') center/contain no-repeat;
+  transform:translateY(100%);
+  transition: transform .55s ease-out;  /* <— animate the unlatch */
+  will-change:transform;
+}
   .grab{
   position:absolute; inset:0;
   cursor:grab;
