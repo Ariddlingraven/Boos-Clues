@@ -364,7 +364,28 @@ function unlatchDrawerAnimated(){
   // animate to lip
   setLip();                         // CSS transition handles the slide
 } // Close the drawer smoothly back in (uses tray's CSS transition)
-function slideDrawerClosed(){
+function slideDrawerClosed()function unlatchDrawerAnimated(){
+  // Make the drawer visible and interactive again
+  drawer.style.display = 'block';
+  drawer.style.pointerEvents = 'auto';
+
+  // Make sure we know the current tray height
+  measure();                 // sets trayH
+
+  // Start fully hidden (off-screen)
+  offset = trayH;
+  apply();                   // updates transform + classes
+
+  // Force a reflow so the upcoming transform change will transition
+  void tray.offsetHeight;
+
+  // Play the stone slide sound as it unlatches
+  try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+
+  // Animate up to the "lip" position (peeking)
+  setLip();                  // calls apply(); CSS transition does the motion
+}
+  {
   measure();                 // ensure trayH is current
   offset = trayH;            // fully hidden
   apply();                   // triggers CSS transform transition
