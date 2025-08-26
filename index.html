@@ -263,6 +263,23 @@ function setOpen(){ offset=0; apply(); }
 function revealDrawerLip(){
   drawer.style.display='block';
   requestAnimationFrame(()=>{ measure(); setLip(); slideSfx(); });
+}// Smoothly unlatch the drawer from fully hidden → lip, with stoneslide sfx
+function unlatchDrawerAnimated(){
+  drawer.style.display = 'block';
+  measure();                        // get trayH
+
+  // start from fully hidden
+  offset = trayH;
+  apply();
+
+  // force a reflow so CSS transition will kick in on the next change
+  void tray.offsetHeight;
+
+  // play the stone-slide sound as it unlatches
+  try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+
+  // animate to lip
+  setLip();                         // CSS transition handles the slide
 }
 let gY=0, gStart=0, draggingDrawer=false;
 grab.addEventListener('pointerdown', e=>{ grab.setPointerCapture(e.pointerId); draggingDrawer=true; gY=e.clientY; gStart=offset; });
