@@ -300,8 +300,64 @@ grab.addEventListener('pointerdown', e=>{ grab.setPointerCapture(e.pointerId); d
 grab.addEventListener('pointermove', e=>{ if(!draggingDrawer) return; offset=Math.max(0, Math.min(trayH, gStart + (e.clientY-gY))); apply(); });
 function endDrag(){ draggingDrawer=false; const dClosed=Math.abs(offset-trayH), dLip=Math.abs(offset-Math.max(0,trayH-LIP)), dOpen=Math.abs(offset-0); const m=Math.min(dClosed,dLip,dOpen); if(m===dOpen) setOpen(); else if(m===dLip) setLip(); else {offset=trayH; apply();} }
 grab.addEventListener('pointerup', endDrag); grab.addEventListener('pointercancel', endDrag);
-lens.addEventListener('click', ()=>{ if(offset>2) return; addItem('lens','Obsidian Lens'); log('You obtained the Obsidian Lens.'); lens.style.pointerEvents='none'; });
+lens.addEventListener('click', ()=>{ if(offset>2) return; addItem('lens','Obsidian Lens') ; log('You obtained the Obsidian Lens.'); lens.style.pointerEvents='none'; }); lens.addEventListener('click', ()=>{
+  if (offset > 0) return;                 // only when fully open
+  if (lens.dataset.collected === '1') return; // prevent double collects
 
+  // Get start (lens) and end (inventory) positions
+  const sr = lens.getBoundingClientRect();
+  const invBar = document.getElementById('inventory');
+  const er = invBar.getBoundingClientRect();
+
+  // Create a flying clone
+  const fly = new Image();
+  fly.src = lens.src;
+  fly.className = 'flyLens';
+  // Start at lens center
+  const startX = sr.left + sr.width/2;
+  const startY = sr.top  + sr.height/2;
+  fly.style.left = (startX - 60) + 'px';     // 120px wide -> center
+  fly.style.top  = (startY - 60) + 'px';
+  fly.style.opacity = '1';
+  fly.style.transform = 'translate(0,0) scale(1)';
+  document.body.appendChild(fly);
+
+  // Compute end delta (to somewhere near the left/middle of inventory bar)
+  const endX = er.left + Math.min(120, er.width*0.2); // a little into the bar
+  const endY = er.top  + er.height/2;
+  const dx = endX - startX;
+  const dy = endY - startY;
+
+  // Force reflow to ensure transition kicks in
+  // eslint-disable-next-line no-unused-expressions
+  fly.offsetHeight;
+
+  // Animate toward inventory: shrink and fade a bit
+  requestAnimationFrame(()=>{
+    fly.style.transform = `translate(${dx}px, ${dy}px) scale(0.35)`;
+    fly.style.opacity = '0.6';
+  });
+
+  // When animation ends: grant item, clean up, and close the drawer
+  const finish = ()=>{
+    fly.removeEventListener('transitionend', finish);
+    fly.remove();
+
+    // Mark collected and hide lens inside the tray
+    lens.dataset.collected = '1';
+    lens.style.opacity = '0';
+    lens.style.pointerEvents = 'none';
+
+    // Add to inventory + toast
+    addItem('lens','Obsidian Lens');
+    log('You obtained the Obsidian Lens.');
+
+    // Slide the drawer back in
+    slideDrawerClosed();
+  };
+  fly.addEventListener('transitionend', finish, { once:true });
+});
+  
 /* ------ bat hotspot → pre-puzzle ------ */
 document.getElementById('batHotspot').addEventListener('click', ()=>{ renderP0(); });
 
