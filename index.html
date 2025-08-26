@@ -61,9 +61,9 @@
   transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
   filter:drop-shadow(0 8px 18px rgba(0,0,0,.6));
   cursor:pointer; pointer-events:auto;          /* <— explicit */
-  transition:transform .35s ease, opacity .3s ease;
+  transition:transform .100s ease, opacity .3s ease;
   will-change: transform;
-  z-index:10;                                   /* <— sits above anything in batbox */
+  z-index:5;                                   /* <— sits above anything in batbox */
 }
   /* slides off to the right */
   .batImg.slide{ transform:translate(160%,-50%); opacity:1; }
@@ -71,7 +71,7 @@
   .needle{
     position:absolute; left:50%; top:50%; width:62%; max-width:640px; aspect-ratio:1.7/1;
     transform:translate(-50%,-50%); background:url('needle.png') center/contain no-repeat;
-    opacity:0; transition:opacity .35s ease; pointer-events:none; z-index:1;
+    opacity:0; transition:opacity .65s ease; pointer-events:none; z-index:1;
   }
   .needle.visible{ opacity:1; pointer-events:auto; }
 
@@ -92,7 +92,13 @@
     position:absolute; inset:0; background:#550000; opacity:0; transition:opacity .22s ease;
     z-index:4; pointer-events:none; /* <-- do NOT block clicks while transparent */
   }
-
+/* Full-screen red flash */
+#screenFlash{
+  position:fixed; inset:0;
+  background:#550000;
+  opacity:0; transition:opacity .28s ease;
+  z-index:9999; pointer-events:none;
+}
   /* Toolbar & inventory */
   .ui{ display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; background:linear-gradient(#0a0a0a,#0b0b0b); border-top:1px solid #1c1a15; height:var(--toolbarH); }
   #log{ font-size:.9rem; color:#cbbd9a; opacity:.9; margin-right:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -157,7 +163,12 @@
   <div id="overlay" aria-hidden="true"><div class="panel" id="panel"></div></div>
 
   <audio id="bgm" src="background.mp3" loop></audio>
-</div>
+  <!-- sfx -->
+<audio id="sfxSlide" src="stoneslide.mp3" preload="auto"></audio>
+<audio id="sfxStab"  src="stab.mp3"        preload="auto"></audio>
+
+<!-- full-screen red flash (covers entire viewport, not just the panel) -->
+<div id="screenFlash" aria-hidden="true"></div>
 
 <script>
 /* ---------- tiny synth ---------- */
@@ -199,6 +210,10 @@ document.getElementById('hintBtn').onclick=()=> log('Move the bat aside, then ho
 
 /* ------ overlay ------ */
 const overlay=document.getElementById('overlay'), panel=document.getElementById('panel'), backBtn=document.getElementById('backBtn');
+  // new sfx + full-screen flash
+const sfxSlide = document.getElementById('sfxSlide');
+const sfxStab  = document.getElementById('sfxStab');
+const screenFlash = document.getElementById('screenFlash');
 function openOverlay(){ overlay.classList.add('active'); overlay.setAttribute('aria-hidden','false'); backBtn.hidden=false; }
 function closeOverlay(){ overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true'); backBtn.hidden=true; panel.innerHTML=''; }
 backBtn.onclick=closeOverlay;
@@ -250,7 +265,9 @@ function renderP0(){
 
   // Slide bat off-screen; reveal on transitionend (robust, delegated)
 const onBatClick = (e)=>{
-  if (!e.target.closest('#batImg')) return; // only respond if the bat itself was clicked
+  if (!e.target.closest('#batImg')) return; // play stone-slide sfx as the bat moves
+try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+// only respond if the bat itself was clicked
 
   // Force a reflow so the transform transition reliably fires:
   // (prevents cases where class is added in same frame as element creation)
@@ -286,7 +303,7 @@ box.addEventListener('click', onBatClick);
   function placeTip(){
     const box=document.getElementById('batbox').getBoundingClientRect();
     const nr=needle.getBoundingClientRect();
-    const tipX = nr.left + nr.width*0.14;  // ~14% across (left-pointing tip)
+    const tipX = nr.left + nr.width*0.20;  // ~14% across (left-pointing tip)
     const tipY = nr.top  + nr.height*0.50; // centered vertically
     zone.style.left=(tipX - box.left - 23)+'px';
     zone.style.top =(tipY - box.top  - 23)+'px';
