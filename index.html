@@ -645,7 +645,6 @@ intro.addEventListener('click', async ()=>{
   muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
 });
 /* ---------- Puzzle 1: Right-side tiki strip (updated with tiki reset + staggered reveal) ---------- */
-<script>
 document.getElementById('p1Hot').addEventListener('click', () => {
   if (!document.body.classList.contains('magnify-on')) renderP1();
 });
@@ -754,7 +753,6 @@ function p1IsSolved(indices){
   }
   return true;
 }
-</script>
 /* helpers */
 function sparkle(target){
   const r=target.getBoundingClientRect();
