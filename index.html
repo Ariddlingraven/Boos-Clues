@@ -109,15 +109,25 @@
   .item.icon img{ width:28px; height:28px; display:block; }
 
   /* magnifier (real zoom using live clone of the scene) */
-  .magnify-on #scene{ cursor:none; }
-  #magScope{
-    position:fixed; left:0; top:0; width:160px; height:160px; border-radius:50%;
-    overflow:hidden; pointer-events:none; z-index:9999; display:none;
-    box-shadow:0 6px 18px rgba(0,0,0,.6), inset 0 0 0 2px rgba(90,80,60,.6);
-  }
-  .magnify-on #magScope{ display:block; }
-  #magInner{ position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform; }
+.magnify-on #scene{ cursor:none; }
+#magScope{
+  position:fixed; left:0; top:0; width:180px; height:180px;   /* slightly bigger lens */
+  border-radius:50%;
+  overflow:hidden; pointer-events:none; z-index:9999; display:none;
+}
+.magnify-on #magScope{ display:block; }
 
+/* the live, scaled clone of the scene */
+#magInner{
+  position:absolute; left:0; top:0;
+  transform-origin:0 0; will-change:transform;
+}
+
+/* your ring frame image sits above the clipped content */
+#magFrame{
+  position:absolute; inset:0; pointer-events:none;
+  filter:drop-shadow(0 4px 10px rgba(0,0,0,.5));
+}
   /* Drawer (grab inside tray so it matches visually) */
   #drawer .tray{
     position:absolute; left:0; bottom:0; width:100%; height:100%;
@@ -203,7 +213,10 @@
   <div id="screenFlash" aria-hidden="true"></div>
 
   <!-- real magnifier -->
-  <div id="magScope"><div id="magInner"></div></div>
+ <div id="magScope" aria-hidden="true">
+  <div id="magInner"></div>
+  <img id="magFrame" src="scope.png" alt="" aria-hidden="true">
+</div>
 </div>
 
 <script>
@@ -234,6 +247,7 @@ function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}
 function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
 
 cube.addEventListener('pointerdown', e => {
+  if (document.body.classList.contains('magnify-on')) return; // no drag while scoping
   if (e.target.closest('.hot-bat')) return;  // leave bat click alone
   dragging = true;
   if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
