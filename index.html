@@ -535,6 +535,9 @@ function setMagnifier(on){
     sceneRect = scene.getBoundingClientRect(); // refresh on enable
   }
 }
+window.addEventListener('resize', ()=>{
+  if (magReady) sceneRect = scene.getBoundingClientRect();
+});
 
 window.addEventListener('mousemove', (e)=>{
   const magnifying = document.body.classList.contains('magnify-on') && magReady;
