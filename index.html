@@ -502,7 +502,18 @@ const magScope = document.getElementById('magScope');
 const magInner = document.getElementById('magInner');
 const SCALE = 2.25;      // zoom factor
 const R = 90;            // lens radius (px) for 180px scope
-let magReady = false, sceneRect, magCloneCube;
+let magReady = false, sceneRect, magCloneCube, magCloneRoot;
+
+function sizeCloneToScene(){
+  sceneRect = scene.getBoundingClientRect();
+  if (magCloneRoot){
+    magCloneRoot.style.width  = sceneRect.width  + 'px';
+    magCloneRoot.style.height = sceneRect.height + 'px';
+    magCloneRoot.style.position = 'relative';
+  }
+  magInner.style.width  = sceneRect.width  + 'px';
+  magInner.style.height = sceneRect.height + 'px';
+}
 
 function setMagnifier(on){
   if (on && !magReady){
@@ -510,30 +521,25 @@ function setMagnifier(on){
     clone.setAttribute('aria-hidden','true');
     clone.style.pointerEvents = 'none';
     clone.style.userSelect = 'none';
+
     magInner.innerHTML = '';
     magInner.appendChild(clone);
+
+    magCloneRoot = clone;
     magCloneCube  = clone.querySelector('#cube');
     magReady = true;
   }
   if (on){
-    sceneRect = scene.getBoundingClientRect();
-    // size the inner canvas exactly to the scene so math is exact
-    magInner.style.width  = sceneRect.width + 'px';
-    magInner.style.height = sceneRect.height + 'px';
+    sizeCloneToScene();
   }
 }
-window.addEventListener('resize', ()=>{
-  if (!magReady) return;
-  sceneRect = scene.getBoundingClientRect();
-  magInner.style.width  = sceneRect.width + 'px';
-  magInner.style.height = sceneRect.height + 'px';
-});
+
+window.addEventListener('resize', ()=>{ if (magReady) sizeCloneToScene(); });
 
 window.addEventListener('mousemove', (e)=>{
   const magnifying = document.body.classList.contains('magnify-on') && magReady;
   if (!magnifying) return;
 
-  // keep cube transform & lighting in sync
   if (magCloneCube){
     magCloneCube.style.transform = cube.style.transform;
     const cs = getComputedStyle(cube);
@@ -542,11 +548,9 @@ window.addEventListener('mousemove', (e)=>{
   }
 
   const x = e.clientX, y = e.clientY;
-  // position the circular scope at cursor
   magScope.style.transform = `translate(${x-R}px, ${y-R}px)`;
 
-  // center the point under the cursor inside the scope
-  if (!sceneRect) sceneRect = scene.getBoundingClientRect();
+  if (!sceneRect) sizeCloneToScene();
   const sx = x - sceneRect.left;
   const sy = y - sceneRect.top;
   magInner.style.transform = `translate(${-sx*SCALE + R}px, ${-sy*SCALE + R}px) scale(${SCALE})`;
