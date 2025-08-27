@@ -211,14 +211,13 @@
   <audio id="sfxStab"  src="stab.mp3"        preload="auto"></audio>
 
   <div id="screenFlash" aria-hidden="true"></div>
-
-  <!-- real magnifier -->
- <div id="magScope" aria-hidden="true">
+</div>
+</div>
+<!-- real magnifier (mounted at body level to avoid clipping) -->
+<div id="magScope" aria-hidden="true">
   <div id="magInner"></div>
   <img id="magFrame" src="scope.png" alt="" aria-hidden="true">
 </div>
-</div>
-
 <script>
 /* ---------- tiny synth ---------- */
 const AC = window.AudioContext || window.webkitAudioContext;
