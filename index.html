@@ -753,19 +753,6 @@ function p1IsSolved(indices){
   }
   return true;
 }
-/* helpers */
-function sparkle(target){
-  const r=target.getBoundingClientRect();
-  for(let i=0;i<10;i++){
-    const s=document.createElement('div'); s.className='spark';
-    s.style.left=(r.left+r.width/2+(Math.random()-0.5)*40)+'px';
-    s.style.top=(r.top+r.height/2+(Math.random()-0.5)*20)+'px';
-    s.style.setProperty('--x',(Math.random()*60-30)+'px');
-    s.style.setProperty('--y',(Math.random()*-60)+'px');
-    document.body.appendChild(s); setTimeout(()=>s.remove(),600);
-  }
-}
-
 /* boot */
 updateCube(); // shows the RIGHT face at load now
 </script>
