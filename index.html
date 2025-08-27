@@ -799,3 +799,804 @@ updateCube(); // shows the RIGHT face at load now
 </script>
 </body>
 </html>
+" and the query is "I have selected "<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Obsidian Hibiscus — Pre-Puzzle</title>
+<style>
+  /* Load Mr Darcy W01 Regular.ttf and use it everywhere */
+  @font-face {
+    font-family: "MrDarcy";
+    src: url("Mr Darcy W01 Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  :root{
+    --ui:#c7b07c; --accent:#3bd0c7;
+    --cube:44vmin; --half:calc(var(--cube)/2);
+    --toolbarH:68px;
+  }
+  html,body{
+    height:100%;
+    margin:0;
+    background:#0b0b0b;
+    color:#e6e0d4;
+    font:16px/1.4 "MrDarcy", serif;
+    overflow:hidden;
+  }
+  #game{position:relative;min-height:100%;overflow:hidden;display:grid;grid-template-rows:1fr var(--toolbarH);}
+
+  /* Scene */
+  #scene{position:relative;display:grid;place-items:center;background:#0d0d0d;isolation:isolate;overflow:hidden;}
+  #scene::before{
+    content:""; position:absolute; inset:-12% -12% 0 -12%;
+    background:url('assets_task_01k2rk4y12fxstvcm7vpkkvm3v_1755319567_img_0.jpg') center/cover no-repeat;
+    filter:blur(2.8px) brightness(.45) saturate(.9) contrast(1.05); z-index:0;
+  }
+  #scene::after{content:""; position:absolute; inset:-10%; background:radial-gradient(circle at 50% 40%, transparent 40%, rgba(0,0,0,.55) 78%, rgba(0,0,0,.8) 100%); z-index:2; pointer-events:none;}
+  #pedestal{ display:none; }
+
+  /* Cube */
+  #cubeWrap{ perspective:1100px; width:min(92vw,1100px); height:100%; display:grid; place-items:center; z-index:3; }
+  #cubeShadow{ filter: drop-shadow(0 30px 60px #000); }
+  #cube{ position:relative; width:var(--cube); height:var(--cube); transform-style:preserve-3d; transition:transform .6s cubic-bezier(.2,.8,.2,1); --hx:50%; --hy:40%; }
+  .face{ position:absolute; inset:0; display:grid; place-items:center; background:#111 url('boxTexture.png') center/cover no-repeat; border:1px solid #000; box-shadow:inset 0 0 60px rgba(0,0,0,.7); backface-visibility:hidden;}
+  .face::after{content:""; position:absolute; inset:0; pointer-events:none; background:
+    radial-gradient(120% 120% at var(--hx) var(--hy), rgba(255,255,255,.06) 0%, transparent 55%),
+    radial-gradient(200% 200% at 50% 50%, transparent 60%, rgba(255,255,255,.025) 100%);}
+  .front{transform: translateZ(var(--half));}
+  .back{transform: rotateY(180deg) translateZ(var(--half));}
+
+  /* RIGHT FACE becomes Puzzle 1 panel and gets an open-hotspot */
+  .right{
+    transform: rotateY( 90deg) translateZ(var(--half));
+    background:#111 url('FirstPuzzleTexturepng.png') center/cover no-repeat; /* exact filename/case */
+  }
+  .hot-right{
+    position:absolute; inset:10% 12% 10% 12%;
+    background:transparent; border:0; cursor:zoom-in;
+  }
+
+  .left{transform: rotateY(-90deg) translateZ(var(--half));}
+  .top{transform: rotateX( 90deg) translateZ(var(--half));}
+  .bottom{transform: rotateX(-90deg) translateZ(var(--half));}
+
+  /* Bat hotspot on front */
+  .hot-bat{
+    position:absolute; top:10%; left:10%; width:30%; aspect-ratio:2/1; border-radius:.5rem;
+    background:url('batflap.png') center/contain no-repeat;
+    filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); cursor:pointer; transition:transform .2s, filter .2s;
+    z-index:9;
+  }
+  .hot-bat:hover{ transform:translateY(-2px); filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
+  .magnify-on .hot-bat{ pointer-events:none; } /* block bat while scoping */
+
+  /* Overlay (puzzle zoom) */
+  #overlay{ position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; pointer-events:none; }
+  #overlay.active{ display:grid; pointer-events:auto; }
+  .panel{ width:min(940px,95vw); max-height:92vh; overflow:auto; background:linear-gradient(#171511,#0d0c0b); border:1px solid #3b3122; border-radius:14px; padding:20px; color:#e8e0d2; box-shadow:0 30px 80px rgba(0,0,0,.7);}
+  .panel h3{margin:.2rem 0 1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase}
+  #backBtn{ position:absolute; top:10px; left:10px; z-index:11 }
+
+  /* Pre-puzzle view */
+  .batbox{ position:relative; width:min(700px,92vw); height:min(420px,68vh); background:#111; border:1px solid #3b3122; border-radius:12px; overflow:hidden; box-shadow:inset 0 0 40px rgba(0,0,0,.55); }
+  .batImg{ position:absolute; left:50%; top:50%; width:58%; max-width:560px; aspect-ratio:2.2/1;
+    transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
+    filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)); cursor:pointer; pointer-events:auto;
+    transition:transform 2s ease, opacity .10s ease; will-change: transform; z-index:5; }
+  .batImg.slide{ transform:translate(160%,-50%); opacity:1; }
+
+  .needle{ position:absolute; left:50%; top:50%; width:62%; max-width:640px; aspect-ratio:1.7/1;
+    transform:translate(-50%,-50%); background:url('needle.png') center/contain no-repeat;
+    opacity:0; transition:opacity .65s ease; pointer-events:none; z-index:1; }
+  .needle.visible{ opacity:1; pointer-events:auto; }
+
+  .tipZone{ position:absolute; width:46px; height:46px; border-radius:50%; border:2px dashed rgba(220,180,120,.35); opacity:0; transition:opacity .2s; pointer-events:none; z-index:3; }
+  .tipZone.on{ opacity:1; pointer-events:auto; }
+  .holdRing{ position:absolute; inset:0; transform:rotate(-90deg); }
+  .holdRing circle{ fill:none; stroke:#d9b07c; stroke-width:3; stroke-dasharray:5 7; }
+
+  .holdMsg{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); color:#d9b25f; opacity:.9; font-size:.95rem; }
+
+  /* Full-screen red flash + message */
+  #screenFlash{ position:fixed; inset:0; background:#550000; opacity:0; transition:opacity .28s ease;
+    z-index:9999; pointer-events:none; display:flex; align-items:center; justify-content:center; }
+  #flashMsg{ color:#f7e7d0; font-size:1.25rem; text-align:center; padding:0 1.2rem; opacity:0.95; text-shadow:0 2px 6px rgba(0,0,0,.5); }
+
+  /* Toolbar & inventory (visible while zoomed) */
+  .ui{ position:relative; z-index:11; display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; background:linear-gradient(#0a0a0a,#0b0b0b); border-top:1px solid #1c1a15; height:var(--toolbarH); }
+  #log{ font-size:.95rem; color:#cbbd9a; opacity:.95; margin-right:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .spacer{flex:1}
+  #inventory{ display:flex; gap:.5rem; align-items:center; overflow:auto; }
+  .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4; white-space:nowrap;}
+  .item.armed{ outline:2px solid var(--accent); }
+  .hud{ position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85; z-index:5 }
+
+  .item.icon{ padding:4px; border-radius:6px; display:inline-grid; place-items:center; width:40px; height:40px; }
+  .item.icon img{ width:28px; height:28px; display:block; }
+
+  /* magnifier (live clone of the scene) */
+  .magnify-on #scene, .magnify-on .panel { cursor:none; }
+  #magScope{ position:fixed; left:0; top:0; width:180px; height:180px; border-radius:50%; overflow:hidden; pointer-events:none; z-index:9999; display:none; }
+  .magnify-on #magScope{ display:block; }
+  #magInner{ position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform; width:0; height:0; }
+  #magFrame{ position:absolute; inset:0; pointer-events:none; filter:drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
+
+  /* Drawer */
+  #drawer .tray{ position:absolute; left:0; bottom:0; width:100%; height:100%; background:url('inlet.png') center/contain no-repeat;
+    transform:translateY(100%); transition: transform .55s ease-out; will-change:transform; }
+  #drawer .tray .grab{ position:absolute; inset:0; background:transparent; cursor:grab; z-index:5; }
+  #drawer.dragging .grab{ cursor:grabbing; }
+  #drawer.peeking .grab{ inset:0 0 auto 0; height:70px; }
+  #drawer.open .grab{ pointer-events:none; }
+  #drawer{ position:absolute; left:50%; transform:translateX(-50%); bottom:calc(var(--toolbarH) - 2px); width:min(640px,78vw); height:220px; z-index:6; pointer-events:auto; display:none; }
+  #lensLoot{ position:absolute; left:50%; top:46%; transform:translate(-50%,-50%); width:120px; max-width:38%; height:auto; filter:drop-shadow(0 10px 20px rgba(0,0,0,.5)); opacity:.25; transition:opacity .2s; pointer-events:none; z-index:1; }
+  #drawer.open #lensLoot{ opacity:1; pointer-events:auto; cursor:pointer; }
+  .flyLens{ position:fixed; width:120px; height:auto; pointer-events:none; z-index:9999; transform-origin:center center; transition: transform .55s cubic-bezier(.2,.8,.2,1), opacity .55s ease; }
+  .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
+  @keyframes pop{ 0%{opacity:0; transform:translate(var(--x),var(--y)) scale(.4)} 40%{opacity:1} 100%{opacity:0; transform:translate(calc(var(--x) * 2), calc(var(--y) * 2)) scale(.1)} }
+
+  /* Puzzle 1 — Five rotating tiki heads */
+  .p1box {
+    position: relative;
+    width: min(800px, 92vw); /* Wider for text */
+    height: min(600px, 80vh); /* Taller for heads */
+    background: #111 url('FirstPuzzleTexturepng.png') center/contain no-repeat;
+    border: 1px solid #3b3122;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .p1-head-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-around;
+    height: 90%;
+    width: 20%;
+  }
+  .p1-head {
+    width: 100%;
+    aspect-ratio: 1/1;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    transform: rotate(0deg);
+    transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .p1-head img {
+    width: 100%;
+    height: auto;
+    display: block;
+    pointer-events: none;
+  }
+  .p1-eyes {
+    position: absolute;
+    left: 40%; right: 40%; /* Centered on the totem */
+    top: 5%; bottom: 5%;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    background:
+      radial-gradient(8px 6px at 50% 10.5%, rgba(255,0,0,0.9), transparent 70%),
+      radial-gradient(8px 6px at 50% 29.5%, rgba(255,0,0,0.9), transparent 70%),
+      radial-gradient(8px 6px at 50% 49.5%, rgba(255,0,0,0.9), transparent 70%),
+      radial-gradient(8px 6px at 50% 69.5%, rgba(255,0,0,0.9), transparent 70%),
+      radial-gradient(8px 6px at 50% 89.5%, rgba(255,0,0,0.9), transparent 70%);
+    mix-blend-mode: screen;
+  }
+  .p1box.solved .p1-eyes {
+    opacity: 1;
+  }
+  .p1-whispers {
+    position: absolute;
+    width: 35%; /* Give space for text */
+    height: 80%;
+    top: 10%;
+    pointer-events: none;
+    font: 12px/1.5 "MrDarcy", serif;
+    color: rgba(255,255,255,0.0); /* Initially invisible */
+    letter-spacing: .06em;
+    filter: blur(.4px);
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+  }
+  .p1-whispers.left { left: 5%; text-align: right; }
+  .p1-whispers.right { right: 5%; text-align: left; }
+
+  .magnify-on .p1-whispers {
+    color: #b00404;
+    text-shadow: 0 0 6px rgba(176,4,4,.7), 0 0 12px rgba(176,4,4,.45);
+  }
+
+  /* Intro title screen */
+  #intro{ position:fixed; inset:0; background:rgba(0,0,0,0.82); color:#e9dfcf; display:flex; align-items:center; justify-content:center; text-align:center; z-index:10000; padding:6vh 6vw; cursor:pointer; }
+  #intro .inner{ max-width:900px; line-height:1.5; font-size:clamp(18px, 2.2vw, 28px); text-shadow:0 2px 14px rgba(0,0,0,.7); }
+  #intro .tap{ margin-top:1.2rem; font-size:0.85em; color:#cdbb9a; opacity:.9; }
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="scene">
+    <div id="cubeWrap">
+      <div id="cubeShadow">
+        <div id="cube" tabindex="0">
+          <div class="face front">
+            <div class="hot-bat" id="batHotspot" title="Inspect bat"></div>
+          </div>
+          <div class="face right">
+            <button class="hot-right" id="p1Hot" title="Inspect carvings"></button>
+          </div>
+          <div class="face back"></div>
+          <div class="face left"></div>
+          <div class="face top"></div>
+          <div class="face bottom"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Drawer -->
+    <div id="drawer" aria-label="Secret drawer">
+      <div class="tray" id="drawerTray">
+        <div class="grab" aria-hidden="true" title="Drag to open"></div>
+        <img id="lensLoot" src="lens.png" alt="Obsidian Lens">
+      </div>
+    </div>
+
+    <div class="hud" id="hud"></div>
+    <div id="pedestal"><img src="obsidian_placeholder.png" alt=""></div>
+  </div>
+
+  <div class="ui">
+    <div id="log">Welcome. Drag to rotate the box. Click the bat to zoom.</div>
+    <button id="muteBtn" aria-label="Mute/Unmute">🔊</button>
+    <div class="spacer"></div>
+    <div id="inventory" aria-label="Inventory"></div>
+  </div>
+
+  <!-- Overlay -->
+  <button id="backBtn" hidden aria-label="Back">↩</button>
+  <div id="overlay" aria-hidden="true"><div class="panel" id="panel"></div></div>
+
+  <!-- Audio -->
+  <audio id="bgm" src="background.mp3" loop></audio>
+  <audio id="sfxSlide" src="stoneslide.mp3" preload="auto"></audio>
+  <audio id="sfxStab"  src="stab.mp3"        preload="auto"></audio>
+  <audio id="sfxHiss"  src="hiss.mp3"        preload="auto"></audio>
+  <audio id="sfxRotate" src="rotate.mp3" preload="auto"></audio>
+
+  <!-- Full-screen red flash/message -->
+  <div id="screenFlash" aria-hidden="true"><div id="flashMsg"></div></div>
+</div> <!-- /#game -->
+
+<!-- real magnifier mounted OUTSIDE #game to avoid clipping -->
+<div id="magScope" aria-hidden="true">
+  <div id="magInner"></div>
+  <img id="magFrame" src="scope.png" alt="" aria-hidden="true">
+</div>
+
+<!-- Title screen -->
+<div id="intro">
+  <div class="inner">
+    <p>“Beyond the fronds, you find a strange black box dressed in obsidian and dripping with a certain... sanguine quality.</p>
+    <p>I wonder what secrets it hides.”</p>
+    <div class="tap">Click to begin</div>
+  </div>
+</div>
+
+<script>
+/* ---------- tiny synth (kept) ---------- */
+const AC = window.AudioContext || window.webkitAudioContext;
+const audio = AC ? new AC() : null;
+function blip(freq=520, dur=0.06, type='sine', gain=0.03){
+  if(!audio) return; const o=audio.createOscillator(), g=audio.createGain();
+  o.type=type; o.frequency.value=freq; g.gain.value=gain; o.connect(g); g.connect(audio.destination);
+  o.start(); o.stop(audio.currentTime+dur);
+}
+document.addEventListener('pointerdown', ()=>{ if(audio && audio.state==='suspended') audio.resume(); }, {once:true});
+function slideSfx(){
+  if(!audio) return;
+  const t=audio.currentTime, src=audio.createBufferSource(), len=audio.sampleRate*0.28;
+  const buf=audio.createBuffer(1,len,audio.sampleRate), d=buf.getChannelData(0);
+  for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*0.12;
+  src.buffer=buf; const f=audio.createBiquadFilter(); f.type='lowpass';
+  f.frequency.setValueAtTime(700, t); f.frequency.linearRampToValueAtTime(240, t+0.28);
+  const g=audio.createGain(); g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(0.07,t+0.06); g.gain.exponentialRampToValueAtTime(0.0001,t+0.28);
+  src.connect(f); f.connect(g); g.connect(audio.destination); src.start();
+}
+
+/* ------ cube rotation (pointer events; hotspot gate) ------ */
+const cube=document.getElementById('cube'), scene=document.getElementById('scene');
+let rotY=-90, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0; // <<< face the RIGHT side at load
+function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}deg)`; }
+function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
+
+cube.addEventListener('pointerdown', e => {
+  // FIX: Added .hot-right to prevent cube drag from blocking the puzzle hotspot click
+  if (e.target.closest('.hot-bat, .hot-right')) return;
+  dragging = true;
+  if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
+  sx = e.clientX; sy = e.clientY;
+  if (raf){ cancelAnimationFrame(raf); raf = null; }
+});
+window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false; lastT=0; raf=requestAnimationFrame(tick); });
+window.addEventListener('pointermove',e=>{ if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy; rotY+=dx*0.25; rotX-=dy*0.25; vy=dx*0.15; vx=-dy*0.15; sx=e.clientX; sy=e.clientY; updateCube(); });
+
+scene.addEventListener('mousemove', e=>{ const r=scene.getBoundingClientRect(); cube.style.setProperty('--hx', ((e.clientX-r.left)/r.width*100).toFixed(1)+'%'); cube.style.setProperty('--hy', ((e.clientY-r.top)/r.height*100).toFixed(1)+'%'); });
+
+/* ------ toolbar & inventory ------ */
+const logEl=document.getElementById('log'); function log(t){ logEl.textContent=t; }
+const inv = document.getElementById('inventory');
+const inventoryIds = new Set();
+
+function addItem(id, label){
+  if (inventoryIds.has(id)) return;
+  inventoryIds.add(id);
+
+  const btn = document.createElement('button');
+  btn.className = 'item icon';
+  btn.setAttribute('aria-label', label || id);
+
+  const img = new Image(); img.draggable = false;
+
+  if (id === 'lens'){
+    img.src = 'lens.png';
+    btn.appendChild(img);
+    btn.addEventListener('click', ()=>{
+      const on = document.body.classList.toggle('magnify-on');
+      btn.classList.toggle('armed', on);
+      setMagnifier(on);
+    });
+  } else {
+    img.src = 'lens.png';
+    btn.appendChild(img);
+  }
+
+  inv.appendChild(btn);
+  sparkle(btn);
+}
+
+function sparkle(target){
+  const r=target.getBoundingClientRect();
+  for(let i=0;i<10;i++){
+    const s=document.createElement('div'); s.className='spark';
+    s.style.left=(r.left+r.width/2+(Math.random()-0.5)*40)+'px';
+    s.style.top=(r.top+r.height/2+(Math.random()-0.5)*20)+'px';
+    s.style.setProperty('--x',(Math.random()*60-30)+'px');
+    s.style.setProperty('--y',(Math.random()*-60)+'px');
+    document.body.appendChild(s); setTimeout(()=>s.remove(),600);
+  }
+}
+
+/* ------ music: autoplay on first click via intro overlay; mute toggle ------ */
+const bgm = document.getElementById('bgm');
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.addEventListener('click', ()=>{
+  bgm.muted = !bgm.muted;
+  muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
+});
+
+/* ------ overlay ------ */
+const overlay=document.getElementById('overlay'), panel=document.getElementById('panel'), backBtn=document.getElementById('backBtn');
+const sfxSlide = document.getElementById('sfxSlide');
+const sfxStab  = document.getElementById('sfxStab');
+const sfxHiss  = document.getElementById('sfxHiss');
+const screenFlash = document.getElementById('screenFlash');
+const flashMsg = document.getElementById('flashMsg');
+function openOverlay(){ overlay.classList.add('active'); overlay.setAttribute('aria-hidden','false'); backBtn.hidden=false; }
+function closeOverlay(){ overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true'); backBtn.hidden=true; panel.innerHTML=''; }
+backBtn.onclick=closeOverlay;
+
+/* ------ drawer (grab is inside tray) ------ */
+const drawer=document.getElementById('drawer'), tray=document.getElementById('drawerTray'), grab=tray.querySelector('.grab'), lens=document.getElementById('lensLoot');
+let trayH=180, offset=180; const LIP=8;
+function measure(){ trayH=tray.getBoundingClientRect().height||180; }
+function apply(){
+  tray.style.transform = `translateY(${offset}px)`;
+  const fullyOpen = (offset === 0);
+  const peeking   = !fullyOpen && offset < trayH;
+  drawer.classList.toggle('open',   fullyOpen);
+  drawer.classList.toggle('peeking', peeking);
+}
+function slideDrawerClosed(){
+  measure();
+  offset = trayH; apply();
+  const onEnd = ()=> {
+    tray.removeEventListener('transitionend', onEnd);
+    tray.removeEventListener('webkitTransitionEnd', onEnd);
+    drawer.style.display = 'none';
+    drawer.style.pointerEvents = 'none';
+    drawer.classList.remove('peeking', 'open');
+  };
+  tray.addEventListener('transitionend', onEnd, { once:true });
+  tray.addEventListener('webkitTransitionEnd', onEnd, { once:true });
+}
+function setLip(){ offset=Math.max(0, trayH-LIP); apply(); }
+function setOpen(){ offset=0; apply(); }
+function unlatchDrawerAnimated(){
+  drawer.style.display = 'block';
+  drawer.style.pointerEvents = 'auto';
+  measure();
+  offset = trayH; apply();
+  void tray.offsetHeight;
+  try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+  setLip();
+}
+
+/* drag */
+let gY=0, gStart=0, draggingDrawer=false;
+grab.addEventListener('pointerdown', e=>{ grab.setPointerCapture(e.pointerId); draggingDrawer=true; gY=e.clientY; gStart=offset; drawer.classList.add('dragging'); });
+grab.addEventListener('pointermove', e=>{ if(!draggingDrawer) return; offset=Math.max(0, Math.min(trayH, gStart + (e.clientY-gY))); apply(); });
+function endDrag(){ if(!draggingDrawer) return; draggingDrawer=false; drawer.classList.remove('dragging'); const dClosed=Math.abs(offset-trayH), dLip=Math.abs(offset-Math.max(0,trayH-LIP)), dOpen=Math.abs(offset-0); const m=Math.min(dClosed,dLip,dOpen); if(m===dOpen) setOpen(); else if(m===dLip) setLip(); else {offset=trayH; apply();} }
+grab.addEventListener('pointerup', endDrag); grab.addEventListener('pointercancel', endDrag);
+
+/* lens collect → fly to toolbar then close drawer */
+lens.addEventListener('click', ()=>{
+  if (offset > 0) return;
+  if (lens.dataset.collected === '1') return;
+
+  const sr = lens.getBoundingClientRect();
+  const invBar = document.getElementById('inventory');
+  const er = invBar.getBoundingClientRect();
+
+  const fly = new Image();
+  fly.src = lens.src;
+  fly.className = 'flyLens';
+  const startX = sr.left + sr.width/2;
+  const startY = sr.top  + sr.height/2;
+  fly.style.left = (startX - 60) + 'px';
+  fly.style.top  = (startY - 60) + 'px';
+  fly.style.opacity = '1';
+  fly.style.transform = 'translate(0,0) scale(1)';
+  document.body.appendChild(fly);
+
+  const endX = er.left + Math.min(120, er.width*0.2);
+  const endY = er.top  + er.height/2;
+  const dx = endX - startX;
+  const dy = endY - startY;
+  fly.offsetHeight;
+  requestAnimationFrame(()=>{ fly.style.transform = `translate(${dx}px, ${dy}px) scale(0.35)`; fly.style.opacity = '0.6'; });
+
+  const finish = ()=>{
+    fly.removeEventListener('transitionend', finish);
+    fly.remove();
+    lens.dataset.collected = '1';
+    lens.style.opacity = '0';
+    lens.style.pointerEvents = 'none';
+    addItem('lens','Obsidian Lens');
+    log('You obtained the Obsidian Lens.');
+    slideDrawerClosed();
+  };
+  fly.addEventListener('transitionend', finish, { once:true });
+});
+
+/* ------ bat hotspot → pre-puzzle ------ */
+document.getElementById('batHotspot').addEventListener('click', ()=>{
+  if (document.body.classList.contains('magnify-on')) return; // block while scoping
+  renderP0();
+});
+
+/* ================= Pre-puzzle ================= */
+function renderP0(){
+  openOverlay();
+  panel.innerHTML = `
+    <h3>Closer Inspection</h3>
+    <div class="batbox" id="batbox">
+      <div class="batImg" id="batImg" title="Move the bat aside"></div>
+      <div class="needle" id="needle"></div>
+      <div class="tipZone" id="tipZone">
+        <svg class="holdRing" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44"></circle></svg>
+      </div>
+      <div class="holdMsg" id="holdMsg"></div>
+    </div>
+    <p id="p0msg">You take a closer look at an erroneously placed bat.</p>`;
+
+  const bat=document.getElementById('batImg');
+  const needle=document.getElementById('needle');
+  const zone=document.getElementById('tipZone');
+  const hmsg=document.getElementById('holdMsg');
+  const msg=document.getElementById('p0msg');
+
+  const already = inventoryIds.has('lens');
+  if (already) {
+    bat.style.display='none';
+    needle.classList.add('visible');
+    zone.classList.remove('on');
+    msg.textContent = "You've already paid the blood burden.";
+  } else {
+    bat.style.zIndex = '20'; bat.style.pointerEvents = 'auto';
+    const onBatActivate = (ev)=>{
+      ev.preventDefault(); ev.stopPropagation();
+      try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+      void bat.offsetHeight;
+      bat.classList.add('slide');
+
+      let revealed=false;
+      const reveal=()=>{
+        if(revealed) return; revealed=true;
+        needle.classList.add('visible');
+        msg.textContent='You manage to move the bat aside on a well-hidden hinge, revealing a large needle underneath. Is that dried blood on the tip?';
+        placeTip(); zone.classList.add('on');
+      };
+      const onEnd=(e2)=>{
+        if(e2 && e2.propertyName && e2.propertyName!=='transform') return;
+        bat.removeEventListener('transitionend', onEnd);
+        bat.removeEventListener('webkitTransitionEnd', onEnd);
+        reveal();
+      };
+      bat.addEventListener('transitionend', onEnd, { once:true });
+      bat.addEventListener('webkitTransitionEnd', onEnd, { once:true });
+      setTimeout(reveal, 900);
+    };
+    bat.addEventListener('pointerdown', onBatActivate, { once:true });
+    bat.addEventListener('click',       onBatActivate, { once:true });
+  }
+
+  function placeTip(){
+    const rectBox=document.getElementById('batbox').getBoundingClientRect();
+    const nr=needle.getBoundingClientRect();
+    const tipX = nr.left + nr.width*0.26;
+    const tipY = nr.top  + nr.height*0.65;
+    zone.style.left=(tipX - rectBox.left - 23)+'px';
+    zone.style.top =(tipY - rectBox.top  - 23)+'px';
+  }
+  window.addEventListener('resize', ()=>{ if(needle.classList.contains('visible')) placeTip(); });
+
+  let progress=0, holding=false, rafId=null, last=0;
+  const FILL_MS=8000, DRAIN_MS=2000;
+  function loop(ts){
+    if(!last) last=ts;
+    const dt=ts-last; last=ts;
+    progress = holding ? Math.min(1, progress + dt/FILL_MS)
+                       : Math.max(0, progress - dt/DRAIN_MS);
+    hmsg.textContent = holding ? 'Better hold still' : '';
+    if(progress>=1){ success(); return; }
+    rafId=requestAnimationFrame(loop);
+  }
+  function start(){ if(!rafId){ last=0; rafId=requestAnimationFrame(loop);} }
+
+  zone.addEventListener('pointerdown', e=>{
+    if(!needle.classList.contains('visible') || already) return;
+    zone.setPointerCapture(e.pointerId);
+    holding=true; start();
+  });
+  zone.addEventListener('pointerup',   ()=>{ holding=false; });
+  zone.addEventListener('pointercancel',()=>{ holding=false; });
+
+  function success(){
+    cancelAnimationFrame(rafId); rafId=null; holding=false; progress=1;
+    screenFlash.style.opacity = 1;
+    flashMsg.textContent = "You hear something unsettling…";
+    try { sfxHiss.currentTime = 0; sfxHiss.play(); } catch {}
+    try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
+
+    setTimeout(()=>{
+      screenFlash.style.opacity = 0;
+      closeOverlay();
+      flashMsg.textContent = "";
+      log('Something below slides open…');
+      setTimeout(()=>{ unlatchDrawerAnimated(); }, 2000);
+    }, 1000); /* 1s red */
+  }
+}
+
+/* --------- Real magnifier (live clone of the scene) --------- */
+const magScope = document.getElementById('magScope');
+const magInner = document.getElementById('magInner');
+const SCALE = 2.25;
+const R = 90;
+let magReady = false, magClone, magSource, magRect;
+
+function sizeCloneToSource(){
+  magRect = magSource.getBoundingClientRect();
+  if (magClone){
+    magClone.style.width  = magRect.width  + 'px';
+    magClone.style.height = magRect.height + 'px';
+    magClone.style.position = 'relative';
+  }
+  magInner.style.width  = magRect.width  + 'px';
+  magInner.style.height = magRect.height + 'px';
+}
+
+function setMagnifier(on){
+  if (on && !magReady){
+    // Determine if we are magnifying the scene or the puzzle panel
+    magSource = overlay.classList.contains('active') ? panel : scene;
+    
+    const clone = magSource.cloneNode(true);
+    clone.setAttribute('aria-hidden','true');
+    clone.style.pointerEvents = 'none';
+    clone.style.userSelect = 'none';
+    
+    magInner.innerHTML = '';
+    magInner.appendChild(clone);
+    magClone = clone;
+    magReady = true;
+  }
+  
+  if (on) {
+    magSource = overlay.classList.contains('active') ? panel : scene;
+    sizeCloneToSource();
+  } else {
+    magReady = false;
+    magClone = null;
+    magInner.innerHTML = '';
+  }
+}
+
+window.addEventListener('resize', ()=>{ if (magReady) sizeCloneToSource(); });
+
+window.addEventListener('mousemove', (e)=>{
+  const magnifying = document.body.classList.contains('magnify-on');
+  if (!magnifying) return;
+  
+  // If the source changes (e.g., closing overlay), reset magnifier
+  const currentSource = overlay.classList.contains('active') ? panel : scene;
+  if (magSource !== currentSource) {
+      setMagnifier(false);
+      setMagnifier(true);
+  }
+  
+  if (!magReady) return;
+
+  // If cloning the scene, keep the cube rotation in sync
+  if (magSource === scene) {
+    const magCloneCube = magClone.querySelector('#cube');
+    if (magCloneCube) {
+        magCloneCube.style.transform = cube.style.transform;
+        const cs = getComputedStyle(cube);
+        magCloneCube.style.setProperty('--hx', cs.getPropertyValue('--hx') || '50%');
+        magCloneCube.style.setProperty('--hy', cs.getPropertyValue('--hy') || '40%');
+    }
+  }
+  
+  const x = e.clientX, y = e.clientY;
+  magScope.style.transform = `translate(${x-R}px, ${y-R}px)`;
+  
+  if (!magRect) sizeCloneToSource();
+  const sx = x - magRect.left;
+  const sy = y - magRect.top;
+  magInner.style.transform = `translate(${-sx*SCALE + R}px, ${-sy*SCALE + R}px) scale(${SCALE})`;
+}, { passive:true });
+
+/* ---------- Intro title screen: start BGM on first click ---------- */
+const intro = document.getElementById('intro');
+intro.addEventListener('click', async ()=>{
+  intro.style.transition = 'opacity .35s ease';
+  intro.style.opacity = '0';
+  setTimeout(()=> intro.remove(), 380);
+  try { await bgm.play(); } catch {}
+  muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
+});
+/* ---------- Puzzle 1: Right-side tiki strip (updated with tiki reset + staggered reveal) ---------- */
+document.getElementById('p1Hot').addEventListener('click', () => {
+  if (!document.body.classList.contains('magnify-on')) renderP1();
+});
+
+const P1_GLYPHS = [
+  { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
+  { id:'moon',    src:'moon.png',     title:'Moon' },
+  { id:'bat',     src:'bat.png',      title:'Bat' },
+  { id:'child',   src:'child.png',    title:'Child' },
+  { id:'blood',   src:'blood.png',    title:'Blood' },
+  { id:'vampire', src:'vampire.png',  title:'Vampire' },
+  { id:'cloud',   src:'cloud.png',    title:'Mist' },
+  { id:'oyster',  src:'oyster.png',   title:'Oyster' },
+  { id:'sun',     src:'sun.png',      title:'Sun' },
+  { id:'bird',    src:'bird.png',     title:'Bird' },
+  { id:'walrus',  src:'walrus.png',   title:'Walrus' },
+];
+
+const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
+
+function renderP1(){
+  openOverlay();
+  panel.innerHTML = `
+    <h3>The Totem Stirs</h3>
+    <div class="p1box" id="p1box">
+      <div class="p1-whispers left" aria-hidden="true">
+        <div>The sun was shining on the sea in the middle of the night.</div>
+        <div>You could not see a cloud because no cloud was in the sky.</div>
+        <div>And so the cunning walrus ate the oysters one by one.</div>
+      </div>
+      <div class="p1-head-container"></div>
+      <div class="p1-whispers right" aria-hidden="true">
+        <div>Its palest blues and darkest hues reflected oh so bright.</div>
+        <div>Small oysters fled from cozy beds to hear one who sang so sweet.</div>
+      </div>
+      <div class="p1-eyes" aria-hidden="true"></div>
+    </div>
+    <p id="p1msg">Arrange the glyphs within each tiki head.</p>
+  `;
+
+  const headContainer = panel.querySelector('.p1-head-container');
+  const box = document.getElementById('p1box');
+  const msg = document.getElementById('p1msg');
+  const audioRotate = document.getElementById('sfxRotate');
+
+  const tikiIndex = P1_GLYPHS.findIndex(g => g.id === 'tiki');
+  const indices = new Array(5).fill(tikiIndex); // Start with tiki head
+  const btns = [];
+  let locked = false;
+
+  for (let i = 0; i < 5; i++) {
+    const btn = document.createElement('button');
+    btn.className = 'p1-head';
+    btn.setAttribute('aria-label', `Tiki head ${i+1}`);
+
+    const img = new Image();
+    img.src = P1_GLYPHS[indices[i]].src;
+    img.alt = '';
+    btn.appendChild(img);
+
+    btn.addEventListener('click', () => {
+      if (locked) return;
+      
+      let currentSymbolIndex = indices[i];
+      currentSymbolIndex = (currentSymbolIndex + 1) % P1_GLYPHS.length;
+      if (P1_GLYPHS[currentSymbolIndex].id === 'tiki') {
+          currentSymbolIndex = (currentSymbolIndex + 1) % P1_GLYPHS.length;
+      }
+      indices[i] = currentSymbolIndex;
+      
+      img.src = P1_GLYPHS[indices[i]].src;
+      img.title = P1_GLYPHS[indices[i]].title;
+
+      const dir = Math.random() > 0.5 ? 15 : -15;
+      btn.style.transform = `rotate(${dir}deg)`;
+      setTimeout(() => { btn.style.transform = `rotate(0deg)`; }, 150);
+
+      try { audioRotate.currentTime = 0; audioRotate.play(); } catch {}
+
+      if (p1IsSolved(indices)) {
+        locked = true;
+        msg.textContent = 'The glyphs align. Something awakens.';
+        try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+
+        btns.forEach(({ btn, img }, j) => {
+          setTimeout(() => {
+            indices[j] = tikiIndex;
+            img.src = P1_GLYPHS[tikiIndex].src;
+            const randDir = (Math.random() > 0.5 ? 360 : -360) * 2;
+            btn.style.transitionDuration = '0.6s';
+            btn.style.transform = `rotate(${randDir}deg)`;
+            setTimeout(() => { btn.style.transform = 'rotate(0deg)'; }, 600);
+            if (j === btns.length - 1) {
+              box.classList.add('solved');
+              log('The totem opens its eyes.');
+            }
+          }, j * 200);
+        });
+      }
+    });
+
+    headContainer.appendChild(btn);
+    btns.push({ btn, img });
+  }
+}
+
+function p1IsSolved(indices){
+  if (indices.length !== P1_SOLUTION.length) return false;
+  for (let i = 0; i < indices.length; i++) {
+    const current = P1_GLYPHS[indices[i]].id;
+    if (current !== P1_SOLUTION[i]) return false;
+  }
+  return true;
+}
+
+/* boot */
+updateCube(); // shows the RIGHT face at load now
+</script>
+</body>
+</html>
