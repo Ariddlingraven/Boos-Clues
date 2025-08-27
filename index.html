@@ -599,11 +599,13 @@ intro.addEventListener('click', async ()=>{
   try { await bgm.play(); } catch {}
   muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
 });
-
-/* ---------- Puzzle 1: Right-side tiki strip ---------- */
-document.getElementById('p1Hot').addEventListener('click', ()=>{ if(!document.body.classList.contains('magnify-on')) renderP1(); });
+/* ---------- Puzzle 1: Right-side tiki strip (updated with tiki reset + staggered reveal) ---------- */
+document.getElementById('p1Hot').addEventListener('click', () => {
+  if (!document.body.classList.contains('magnify-on')) renderP1();
+});
 
 const P1_GLYPHS = [
+  { id:'tiki',    src:'tiki.png',    title:'Tiki Head' },
   { id:'blood',   src:'blood.png',   title:'Blood'   },
   { id:'bat',     src:'bat.png',     title:'Bat'     },
   { id:'bird',    src:'bird.png',    title:'Bird'    },
@@ -616,17 +618,15 @@ const P1_GLYPHS = [
   { id:'walrus',  src:'walrus.png',  title:'Walrus'  },
 ];
 
-/* Top -> bottom solution; edit to your design doc */
-const P1_SOLUTION = ['moon','cloud','bird','blood','child','walrus'];
+// Correct answer (top → bottom)
+const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
 
-/* Mouth centers as % of the zoom box */
 const P1_MOUTHS = [
   { x:50, y:14 },
   { x:50, y:27 },
   { x:50, y:40 },
   { x:50, y:53 },
   { x:50, y:66 },
-  { x:50, y:79 },
 ];
 
 function renderP1(){
@@ -635,9 +635,9 @@ function renderP1(){
     <h3>Peculiar Carvings</h3>
     <div class="p1box" id="p1box">
       <div class="p1-whispers" aria-hidden="true">
-        <div>when the moon shrouds the mist, the bird drinks first…</div>
-        <div>…then blood remembers the child…</div>
-        <div>…and tusks bow beneath the veil.</div>
+        <div>The sun was shining on the sea in the middle of the night…</div>
+        <div>…Small oysters fled from cozy beds to hear one who sang so sweet…</div>
+        <div>…And so the cunning walrus ate the oysters one by one.</div>
       </div>
       <div class="p1-eyes" aria-hidden="true"></div>
     </div>
@@ -647,6 +647,9 @@ function renderP1(){
   const box = document.getElementById('p1box');
   const msg = document.getElementById('p1msg');
   const indices = new Array(P1_MOUTHS.length).fill(0);
+  let locked = false;
+  const tikiIndex = P1_GLYPHS.findIndex(g => g.id === 'tiki');
+  const btns = [];
 
   P1_MOUTHS.forEach((p, i)=>{
     const btn = document.createElement('button');
@@ -656,23 +659,38 @@ function renderP1(){
     btn.setAttribute('aria-label', `Mouth ${i+1}`);
 
     const img = new Image();
-    img.src = P1_GLYPHS[0].src;
+    img.src = P1_GLYPHS[tikiIndex].src;
     img.alt = '';
     btn.appendChild(img);
+    btns.push({ btn, img });
 
     btn.addEventListener('click', ()=>{
+      if (locked) return;
+
       indices[i] = (indices[i] + 1) % P1_GLYPHS.length;
       img.src = P1_GLYPHS[indices[i]].src;
       img.title = P1_GLYPHS[indices[i]].title;
 
-      if (p1IsSolved(indices)){
-        box.classList.add('solved'); // only lights eyes when ALL correct
+      if (p1IsSolved(indices)) {
+        locked = true;
         log('The carvings awaken…');
         msg.textContent = 'Something responds deep within the stone.';
         try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+
+        // Animate each mouth back to 'tiki' glyph, staggered
+        btns.forEach(({ img }, j)=>{
+          setTimeout(()=>{
+            indices[j] = tikiIndex;
+            img.src = P1_GLYPHS[tikiIndex].src;
+            img.title = P1_GLYPHS[tikiIndex].title;
+            if (j === btns.length - 1) {
+              box.classList.add('solved'); // Light up eyes at end
+            }
+          }, j * 200);
+        });
       } else {
-        box.classList.remove('solved');
         msg.textContent = 'Arrange the glyphs within each mouth.';
+        box.classList.remove('solved');
       }
     });
 
@@ -682,9 +700,9 @@ function renderP1(){
 
 function p1IsSolved(indices){
   if (indices.length !== P1_SOLUTION.length) return false;
-  for (let i=0;i<indices.length;i++){
-    const curId = P1_GLYPHS[ indices[i] ].id;
-    if (curId !== P1_SOLUTION[i]) return false;
+  for (let i = 0; i < indices.length; i++) {
+    const current = P1_GLYPHS[indices[i]].id;
+    if (current !== P1_SOLUTION[i]) return false;
   }
   return true;
 }
