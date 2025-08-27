@@ -47,15 +47,15 @@
   .face::after{content:""; position:absolute; inset:0; pointer-events:none; background:
     radial-gradient(120% 120% at var(--hx) var(--hy), rgba(255,255,255,.06) 0%, transparent 55%),
     radial-gradient(200% 200% at 50% 50%, transparent 60%, rgba(255,255,255,.025) 100%);}
+  .face.right {
+  background-image: url('firstpuzzletexturepng.png');
+}
   .front{transform: translateZ(var(--half));}
   .back{transform: rotateY(180deg) translateZ(var(--half));}
   .right{transform: rotateY( 90deg) translateZ(var(--half));}
   .left{transform: rotateY(-90deg) translateZ(var(--half));}
   .top{transform: rotateX( 90deg) translateZ(var(--half));}
   .bottom{transform: rotateX(-90deg) translateZ(var(--half));}
-.face.right {
-  background-image: url('firstpuzzletexturepng.png');
-}
   /* Bat hotspot on front */
   .hot-bat{
     position:absolute; top:10%; left:10%; width:30%; aspect-ratio:2/1; border-radius:.5rem;
