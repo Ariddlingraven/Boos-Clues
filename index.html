@@ -512,34 +512,47 @@ function renderP0(){
 const magScope = document.getElementById('magScope');
 const magInner = document.getElementById('magInner');
 const SCALE = 2.25;               // zoom factor
-const R = 80;                      // lens radius (px)
-let magReady = false, sceneRect;
+const R = 90;                      // lens radius (px) for 180px scope
+let magReady = false, sceneRect, magCloneCube, magCloneScene;
 
 function setMagnifier(on){
   if (on && !magReady){
-    // Clone the scene once; strip ids so it won't confuse getElementById.
+    // Clone the live scene (keep ids so we can sync transforms easily)
     const clone = scene.cloneNode(true);
-    clone.querySelectorAll('[id]').forEach(n=>n.removeAttribute('id'));
     clone.setAttribute('aria-hidden','true');
     clone.style.pointerEvents = 'none';
     clone.style.userSelect = 'none';
+
     magInner.innerHTML = '';
     magInner.appendChild(clone);
+
+    magCloneScene = clone;
+    magCloneCube  = clone.querySelector('#cube');   // same id as real cube
     magReady = true;
     sceneRect = scene.getBoundingClientRect();
   }
   if (on){
-    sceneRect = scene.getBoundingClientRect(); // refresh in case layout changed
+    sceneRect = scene.getBoundingClientRect(); // refresh on enable
   }
 }
 
 window.addEventListener('mousemove', (e)=>{
-  if (!document.body.classList.contains('magnify-on') || !magReady) return;
+  const magnifying = document.body.classList.contains('magnify-on') && magReady;
+  if (!magnifying) return;
+
+  // Keep the clone’s cube transform & highlight vars in lockstep
+  if (magCloneCube){
+    magCloneCube.style.transform = cube.style.transform;
+    const cs = getComputedStyle(cube);
+    magCloneCube.style.setProperty('--hx', cs.getPropertyValue('--hx') || '50%');
+    magCloneCube.style.setProperty('--hy', cs.getPropertyValue('--hy') || '40%');
+  }
+
+  // Place the circular scope under the cursor
   const x = e.clientX, y = e.clientY;
-  // position scope
   magScope.style.transform = `translate(${x-R}px, ${y-R}px)`;
 
-  // align the clone so the point under the cursor is centered in the scope
+  // Align the clone so the point under the cursor is centered in the scope
   const sx = x - sceneRect.left;
   const sy = y - sceneRect.top;
   magInner.style.transform = `translate(${-sx*SCALE + R}px, ${-sy*SCALE + R}px) scale(${SCALE})`;
