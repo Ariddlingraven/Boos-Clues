@@ -32,7 +32,7 @@
   #scene{position:relative;display:grid;place-items:center;background:#0d0d0d;isolation:isolate;overflow:hidden;}
   #scene::before{
     content:""; position:absolute; inset:-12% -12% 0 -12%;
-    background:url('https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/jungle_background.jpg') center/cover no-repeat;
+    background:url('assets_task_01k2rk4y12fxstvcm7vpkkvm3v_1755319567_img_0.jpg') center/cover no-repeat;
     filter:blur(2.8px) brightness(.45) saturate(.9) contrast(1.05); z-index:0;
   }
   #scene::after{content:""; position:absolute; inset:-10%; background:radial-gradient(circle at 50% 40%, transparent 40%, rgba(0,0,0,.55) 78%, rgba(0,0,0,.8) 100%); z-index:2; pointer-events:none;}
@@ -42,7 +42,7 @@
   #cubeWrap{ perspective:1100px; width:min(92vw,1100px); height:100%; display:grid; place-items:center; z-index:3; }
   #cubeShadow{ filter: drop-shadow(0 30px 60px #000); }
   #cube{ position:relative; width:var(--cube); height:var(--cube); transform-style:preserve-3d; transition:transform .6s cubic-bezier(.2,.8,.2,1); --hx:50%; --hy:40%; }
-  .face{ position:absolute; inset:0; display:grid; place-items:center; background:#111 url('https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/box_texture.png') center/cover no-repeat; border:1px solid #000; box-shadow:inset 0 0 60px rgba(0,0,0,.7); backface-visibility:hidden;}
+  .face{ position:absolute; inset:0; display:grid; place-items:center; background:#111 url('boxTexture.png') center/cover no-repeat; border:1px solid #000; box-shadow:inset 0 0 60px rgba(0,0,0,.7); backface-visibility:hidden;}
   .face::after{content:""; position:absolute; inset:0; pointer-events:none; background:
     radial-gradient(120% 120% at var(--hx) var(--hy), rgba(255,255,255,.06) 0%, transparent 55%),
     radial-gradient(200% 200% at 50% 50%, transparent 60%, rgba(255,255,255,.025) 100%);}
@@ -52,7 +52,7 @@
   /* RIGHT FACE becomes Puzzle 1 panel and gets an open-hotspot */
   .right{
     transform: rotateY( 90deg) translateZ(var(--half));
-    background:#111 url('https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/FirstPuzzleTexturepng.png') center/cover no-repeat; /* exact filename/case */
+    background:#111 url('FirstPuzzleTexturepng.png') center/cover no-repeat; /* exact filename/case */
   }
   .hot-right{
     position:absolute; inset:10% 12% 10% 12%;
@@ -66,7 +66,7 @@
   /* Bat hotspot on front */
   .hot-bat{
     position:absolute; top:10%; left:10%; width:30%; aspect-ratio:2/1; border-radius:.5rem;
-    background:url('https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/batflap.png') center/contain no-repeat;
+    background:url('batflap.png') center/contain no-repeat;
     filter:drop-shadow(0 2px 6px rgba(0,0,0,.6)); cursor:pointer; transition:transform .2s, filter .2s;
     z-index:9;
   }
@@ -83,13 +83,13 @@
   /* Pre-puzzle view */
   .batbox{ position:relative; width:min(700px,92vw); height:min(420px,68vh); background:#111; border:1px solid #3b3122; border-radius:12px; overflow:hidden; box-shadow:inset 0 0 40px rgba(0,0,0,.55); }
   .batImg{ position:absolute; left:50%; top:50%; width:58%; max-width:560px; aspect-ratio:2.2/1;
-    transform:translate(-50%,-50%); background:url('https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/batflap.png') center/contain no-repeat;
+    transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
     filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)); cursor:pointer; pointer-events:auto;
     transition:transform 2s ease, opacity .10s ease; will-change: transform; z-index:5; }
   .batImg.slide{ transform:translate(160%,-50%); opacity:1; }
 
   .needle{ position:absolute; left:50%; top:50%; width:62%; max-width:640px; aspect-ratio:1.7/1;
-    transform:translate(-50%,-50%); background:url('https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/needle.png') center/contain no-repeat;
+    transform:translate(-50%,-50%); background:url('needle.png') center/contain no-repeat;
     opacity:0; transition:opacity .65s ease; pointer-events:none; z-index:1; }
   .needle.visible{ opacity:1; pointer-events:auto; }
 
@@ -125,7 +125,7 @@
   #magFrame{ position:absolute; inset:0; pointer-events:none; filter:drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
 
   /* Drawer */
-  #drawer .tray{ position:absolute; left:0; bottom:0; width:100%; height:100%; background:url('https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/inlet.png') center/contain no-repeat;
+  #drawer .tray{ position:absolute; left:0; bottom:0; width:100%; height:100%; background:url('inlet.png') center/contain no-repeat;
     transform:translateY(100%); transition: transform .55s ease-out; will-change:transform; }
   #drawer .tray .grab{ position:absolute; inset:0; background:transparent; cursor:grab; z-index:5; }
   #drawer.dragging .grab{ cursor:grabbing; }
@@ -143,7 +143,7 @@
     position: relative;
     width: min(800px, 92vw); /* Wider for text */
     height: min(600px, 80vh); /* Taller for heads */
-    background: #111 url('https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/FirstPuzzleTexturepng.png') center/contain no-repeat;
+    background: #111 url('FirstPuzzleTexturepng.png') center/contain no-repeat;
     border: 1px solid #3b3122;
     border-radius: 12px;
     overflow: hidden;
@@ -249,12 +249,12 @@
     <div id="drawer" aria-label="Secret drawer">
       <div class="tray" id="drawerTray">
         <div class="grab" aria-hidden="true" title="Drag to open"></div>
-        <img id="lensLoot" src="https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/lens.png" alt="Obsidian Lens">
+        <img id="lensLoot" src="lens.png" alt="Obsidian Lens">
       </div>
     </div>
 
     <div class="hud" id="hud"></div>
-    <div id="pedestal"><img src="https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/obsidian_placeholder.png" alt=""></div>
+    <div id="pedestal"><img src="obsidian_placeholder.png" alt=""></div>
   </div>
 
   <div class="ui">
@@ -269,11 +269,11 @@
   <div id="overlay" aria-hidden="true"><div class="panel" id="panel"></div></div>
 
   <!-- Audio -->
-  <audio id="bgm" src="https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/background.mp3" loop></audio>
-  <audio id="sfxSlide" src="https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/stoneslide.mp3" preload="auto"></audio>
-  <audio id="sfxStab"  src="https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/stab.mp3"        preload="auto"></audio>
-  <audio id="sfxHiss"  src="https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/hiss.mp3"        preload="auto"></audio>
-  <audio id="sfxRotate" src="https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/rotate.mp3" preload="auto"></audio>
+  <audio id="bgm" src="background.mp3" loop></audio>
+  <audio id="sfxSlide" src="stoneslide.mp3" preload="auto"></audio>
+  <audio id="sfxStab"  src="stab.mp3"        preload="auto"></audio>
+  <audio id="sfxHiss"  src="hiss.mp3"        preload="auto"></audio>
+  <audio id="sfxRotate" src="rotate.mp3" preload="auto"></audio>
 
   <!-- Full-screen red flash/message -->
   <div id="screenFlash" aria-hidden="true"><div id="flashMsg"></div></div>
@@ -282,7 +282,7 @@
 <!-- real magnifier mounted OUTSIDE #game to avoid clipping -->
 <div id="magScope" aria-hidden="true">
   <div id="magInner"></div>
-  <img id="magFrame" src="https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/scope.png" alt="" aria-hidden="true">
+  <img id="magFrame" src="scope.png" alt="" aria-hidden="true">
 </div>
 
 <!-- Title screen -->
@@ -350,7 +350,7 @@ function addItem(id, label){
   const img = new Image(); img.draggable = false;
 
   if (id === 'lens'){
-    img.src = 'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/lens.png';
+    img.src = 'lens.png';
     btn.appendChild(img);
     btn.addEventListener('click', ()=>{
       const on = document.body.classList.toggle('magnify-on');
@@ -358,7 +358,7 @@ function addItem(id, label){
       setMagnifier(on);
     });
   } else {
-    img.src = 'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/lens.png';
+    img.src = 'lens.png';
     btn.appendChild(img);
   }
 
@@ -684,17 +684,17 @@ document.getElementById('p1Hot').addEventListener('click', () => {
 });
 
 const P1_GLYPHS = [
-  { id:'tiki',    src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/tikihead.png', title:'Tiki Head' },
-  { id:'moon',    src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/moon.png',     title:'Moon' },
-  { id:'bat',     src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/bat.png',      title:'Bat' },
-  { id:'child',   src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/child.png',    title:'Child' },
-  { id:'blood',   src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/blood.png',    title:'Blood' },
-  { id:'vampire', src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/vampire.png',  title:'Vampire' },
-  { id:'cloud',   src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/cloud.png',    title:'Mist' },
-  { id:'oyster',  src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/oyster.png',   title:'Oyster' },
-  { id:'sun',     src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/sun.png',      title:'Sun' },
-  { id:'bird',    src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/bird.png',     title:'Bird' },
-  { id:'walrus',  src:'https://storage.googleapis.com/gemini-prod-us-west1-assets/solution/walrus.png',   title:'Walrus' },
+  { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
+  { id:'moon',    src:'moon.png',     title:'Moon' },
+  { id:'bat',     src:'bat.png',      title:'Bat' },
+  { id:'child',   src:'child.png',    title:'Child' },
+  { id:'blood',   src:'blood.png',    title:'Blood' },
+  { id:'vampire', src:'vampire.png',  title:'Vampire' },
+  { id:'cloud',   src:'cloud.png',    title:'Mist' },
+  { id:'oyster',  src:'oyster.png',   title:'Oyster' },
+  { id:'sun',     src:'sun.png',      title:'Sun' },
+  { id:'bird',    src:'bird.png',     title:'Bird' },
+  { id:'walrus',  src:'walrus.png',   title:'Walrus' },
 ];
 
 const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
