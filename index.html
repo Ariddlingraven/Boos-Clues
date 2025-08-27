@@ -5,12 +5,27 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Obsidian Hibiscus — Pre-Puzzle</title>
 <style>
+  /* Load Mr Darcy W01 Regular.ttf and use it everywhere */
+  @font-face {
+    font-family: "MrDarcy";
+    src: url("Mr Darcy W01 Regular.ttf") format("truetype");
+    font-weight: normal;
+    font-style: normal;
+  }
+
   :root{
     --ui:#c7b07c; --accent:#3bd0c7;
     --cube:44vmin; --half:calc(var(--cube)/2);
     --toolbarH:68px;
   }
-  html,body{height:100%;margin:0;background:#0b0b0b;color:#e6e0d4;font:16px/1.4 system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif; overflow:hidden;}
+  html,body{
+    height:100%;
+    margin:0;
+    background:#0b0b0b;
+    color:#e6e0d4;
+    font:16px/1.4 "MrDarcy", serif;
+    overflow:hidden;
+  }
   #game{position:relative;min-height:100%;overflow:hidden;display:grid;grid-template-rows:1fr var(--toolbarH);}
 
   /* Scene */
@@ -47,13 +62,13 @@
     z-index:9;
   }
   .hot-bat:hover{ transform:translateY(-2px); filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
-  /* Disable bat while magnifying */
-  .magnify-on .hot-bat{ pointer-events:none; filter:grayscale(.2) opacity(.75); }
+  /* while magnifying, don't allow bat clicks */
+  .magnify-on .hot-bat{ pointer-events:none; }
 
-  /* Overlay (does NOT cover the toolbar area now) */
-  #overlay{ position:absolute; left:0; right:0; top:0; bottom:var(--toolbarH); display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; pointer-events:none; }
+  /* Overlay (puzzle zoom) */
+  #overlay{ position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; pointer-events:none; }
   #overlay.active{ display:grid; pointer-events:auto; }
-  .panel{ width:min(940px,95vw); max-height:calc(92vh - var(--toolbarH)); overflow:auto; background:linear-gradient(#171511,#0d0c0b); border:1px solid #3b3122; border-radius:14px; padding:20px; color:#e8e0d2; box-shadow:0 30px 80px rgba(0,0,0,.7);}
+  .panel{ width:min(940px,95vw); max-height:92vh; overflow:auto; background:linear-gradient(#171511,#0d0c0b); border:1px solid #3b3122; border-radius:14px; padding:20px; color:#e8e0d2; box-shadow:0 30px 80px rgba(0,0,0,.7);}
   .panel h3{margin:.2rem 0 1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase}
   #backBtn{ position:absolute; top:10px; left:10px; z-index:11 }
 
@@ -89,26 +104,20 @@
   .holdRing circle{ fill:none; stroke:#d9b07c; stroke-width:3; stroke-dasharray:5 7; }
 
   .holdMsg{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); color:#d9b25f; opacity:.9; font-size:.95rem; }
-  .flashRed{
-    position:absolute; inset:0; background:#550000; opacity:0; transition:opacity .22s ease;
-    z-index:4; pointer-events:none;
-  }
+
+  /* Full-screen red flash + message */
   #screenFlash{
     position:fixed; inset:0; background:#550000; opacity:0; transition:opacity .28s ease;
-    z-index:9999; pointer-events:none;
+    z-index:9999; pointer-events:none; display:flex; align-items:center; justify-content:center;
   }
-  /* Red flash message */
-  #screenFlashMsg{
-    position:fixed; inset:0; display:none; place-items:center;
-    z-index:10000; pointer-events:none;
-    color:#f2eae2; font-size:clamp(18px, 3.2vw, 32px); font-weight:700; letter-spacing:.02em;
-    text-shadow:0 2px 10px #000;
+  #flashMsg{
+    color:#f7e7d0; font-size:1.25rem; text-align:center; padding:0 1.2rem; opacity:0.95;
+    text-shadow:0 2px 6px rgba(0,0,0,.5);
   }
-  #screenFlashMsg.show{ display:grid; }
 
-  /* Toolbar & inventory (kept visible above overlay) */
-  .ui{ position:relative; z-index:20; display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; background:linear-gradient(#0a0a0a,#0b0b0b); border-top:1px solid #1c1a15; height:var(--toolbarH); }
-  #log{ font-size:.9rem; color:#cbbd9a; opacity:.9; margin-right:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  /* Toolbar & inventory — ensure above overlay so it stays visible while zoomed */
+  .ui{ position:relative; z-index:11; display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; background:linear-gradient(#0a0a0a,#0b0b0b); border-top:1px solid #1c1a15; height:var(--toolbarH); }
+  #log{ font-size:.95rem; color:#cbbd9a; opacity:.95; margin-right:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .spacer{flex:1}
   #inventory{ display:flex; gap:.5rem; align-items:center; overflow:auto; }
   .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4; white-space:nowrap;}
@@ -169,6 +178,18 @@
 
   .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
   @keyframes pop{ 0%{opacity:0; transform:translate(var(--x),var(--y)) scale(.4)} 40%{opacity:1} 100%{opacity:0; transform:translate(calc(var(--x) * 2), calc(var(--y) * 2)) scale(.1)} }
+
+  /* Intro title screen */
+  #intro{
+    position:fixed; inset:0; background:rgba(0,0,0,0.82);
+    color:#e9dfcf; display:flex; align-items:center; justify-content:center; text-align:center;
+    z-index:10000; padding:6vh 6vw; cursor:pointer;
+  }
+  #intro .inner{
+    max-width:900px; line-height:1.5; font-size:clamp(18px, 2.2vw, 28px);
+    text-shadow:0 2px 14px rgba(0,0,0,.7);
+  }
+  #intro .tap{ margin-top:1.2rem; font-size:0.85em; color:#cdbb9a; opacity:.9; }
 </style>
 </head>
 <body>
@@ -198,28 +219,29 @@
     </div>
 
     <div class="hud" id="hud"></div>
+    <div id="pedestal"><img src="obsidian_placeholder.png" alt=""></div>
   </div>
 
   <div class="ui">
     <div id="log">Welcome. Drag to rotate the box. Click the bat to zoom.</div>
-    <!-- HINT REMOVED -->
-    <!-- Music → Mute -->
-    <button id="muteBtn" aria-pressed="false" title="Mute/Unmute">🔊</button>
+    <!-- Removed Hint. Added Mute toggle -->
+    <button id="muteBtn" aria-label="Mute/Unmute">🔊</button>
     <div class="spacer"></div>
     <div id="inventory" aria-label="Inventory"></div>
   </div>
 
-  <!-- Overlay (stops above toolbar) -->
+  <!-- Overlay -->
   <button id="backBtn" hidden aria-label="Back">↩</button>
   <div id="overlay" aria-hidden="true"><div class="panel" id="panel"></div></div>
 
+  <!-- Audio -->
   <audio id="bgm" src="background.mp3" loop></audio>
   <audio id="sfxSlide" src="stoneslide.mp3" preload="auto"></audio>
   <audio id="sfxStab"  src="stab.mp3"        preload="auto"></audio>
   <audio id="sfxHiss"  src="hiss.mp3"        preload="auto"></audio>
 
-  <div id="screenFlash" aria-hidden="true"></div>
-  <div id="screenFlashMsg" aria-hidden="true">You hear something unsettling…</div>
+  <!-- Full-screen red flash/message -->
+  <div id="screenFlash" aria-hidden="true"><div id="flashMsg"></div></div>
 </div> <!-- /#game -->
 
 <!-- real magnifier mounted OUTSIDE #game to avoid clipping -->
@@ -228,8 +250,17 @@
   <img id="magFrame" src="scope.png" alt="" aria-hidden="true">
 </div>
 
+<!-- Title screen -->
+<div id="intro">
+  <div class="inner">
+    <p>“Beyond the fronds, you find a strange black box dressed in obsidian and dripping with a certain... sanguine quality.</p>
+    <p>I wonder what secrets it hides.”</p>
+    <div class="tap">Click to begin</div>
+  </div>
+</div>
+
 <script>
-/* ---------- tiny synth ---------- */
+/* ---------- tiny synth (kept) ---------- */
 const AC = window.AudioContext || window.webkitAudioContext;
 const audio = AC ? new AC() : null;
 function blip(freq=520, dur=0.06, type='sine', gain=0.03){
@@ -286,6 +317,7 @@ function addItem(id, label){
   if (id === 'lens'){
     img.src = 'lens.png';
     btn.appendChild(img);
+    // toggle magnifier
     btn.addEventListener('click', ()=>{
       const on = document.body.classList.toggle('magnify-on');
       btn.classList.toggle('armed', on);
@@ -299,6 +331,7 @@ function addItem(id, label){
   inv.appendChild(btn);
   sparkle(btn);
 }
+
 function sparkle(target){
   const r=target.getBoundingClientRect();
   for(let i=0;i<10;i++){
@@ -311,14 +344,21 @@ function sparkle(target){
   }
 }
 
+/* ------ music: autoplay on first click via intro overlay; mute toggle ------ */
+const bgm = document.getElementById('bgm');
+const muteBtn = document.getElementById('muteBtn');
+muteBtn.addEventListener('click', ()=>{
+  bgm.muted = !bgm.muted;
+  muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
+});
+
 /* ------ overlay ------ */
 const overlay=document.getElementById('overlay'), panel=document.getElementById('panel'), backBtn=document.getElementById('backBtn');
 const sfxSlide = document.getElementById('sfxSlide');
 const sfxStab  = document.getElementById('sfxStab');
 const sfxHiss  = document.getElementById('sfxHiss');
 const screenFlash = document.getElementById('screenFlash');
-const flashMsg   = document.getElementById('screenFlashMsg');
-
+const flashMsg = document.getElementById('flashMsg');
 function openOverlay(){ overlay.classList.add('active'); overlay.setAttribute('aria-hidden','false'); backBtn.hidden=false; }
 function closeOverlay(){ overlay.classList.remove('active'); overlay.setAttribute('aria-hidden','true'); backBtn.hidden=true; panel.innerHTML=''; }
 backBtn.onclick=closeOverlay;
@@ -407,7 +447,7 @@ lens.addEventListener('click', ()=>{
 });
 
 /* ------ bat hotspot → pre-puzzle ------ */
-document.getElementById('batHotspot').addEventListener('click', (e)=>{
+document.getElementById('batHotspot').addEventListener('click', ()=>{
   if (document.body.classList.contains('magnify-on')) return; // block while scoping
   renderP0();
 });
@@ -423,7 +463,6 @@ function renderP0(){
       <div class="tipZone" id="tipZone">
         <svg class="holdRing" viewBox="0 0 100 100"><circle cx="50" cy="50" r="44"></circle></svg>
       </div>
-      <div class="flashRed" id="flashRed"></div>
       <div class="holdMsg" id="holdMsg"></div>
     </div>
     <p id="p0msg">You take a closer look at an erroneously placed bat.</p>`;
@@ -502,21 +541,19 @@ function renderP0(){
 
   function success(){
     cancelAnimationFrame(rafId); rafId=null; holding=false; progress=1;
-
-    // Full red + stab + hiss + message
+    // Red flash + hiss + message (1s duration)
     screenFlash.style.opacity = 1;
-    try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
+    flashMsg.textContent = "You hear something unsettling…";
     try { sfxHiss.currentTime = 0; sfxHiss.play(); } catch {}
-    flashMsg.classList.add('show');
+    try { sfxStab.currentTime = 0; sfxStab.play(); } catch {}
 
-    // Fade red out, close zoom, then WAIT 2s before drawer pops into view
     setTimeout(()=>{
       screenFlash.style.opacity = 0;
-      flashMsg.classList.remove('show');
       closeOverlay();
+      flashMsg.textContent = "";
       log('Something below slides open…');
-      setTimeout(()=>{ unlatchDrawerAnimated(); }, 2000);  // 2s pause
-    }, 600);
+      setTimeout(()=>{ unlatchDrawerAnimated(); }, 2000);  // 2s pause so the pop is noticed
+    }, 1000); /* 1s red */
   }
 }
 
@@ -579,23 +616,14 @@ window.addEventListener('mousemove', (e)=>{
   magInner.style.transform = `translate(${-sx*SCALE + R}px, ${-sy*SCALE + R}px) scale(${SCALE})`;
 }, { passive:true });
 
-/* --- Music autoplay + Mute toggle --- */
-const bgm = document.getElementById('bgm');
-const muteBtn = document.getElementById('muteBtn');
-bgm.volume = 0.5;
-bgm.play().catch(()=>{}); // may be blocked until gesture
-
-const unlockBgm = () => {
-  bgm.play().catch(()=>{});
-  document.removeEventListener('pointerdown', unlockBgm);
-};
-document.addEventListener('pointerdown', unlockBgm);
-
-muteBtn.addEventListener('click', () => {
-  const nowMuted = !bgm.muted;
-  bgm.muted = nowMuted;
-  muteBtn.setAttribute('aria-pressed', String(nowMuted));
-  muteBtn.textContent = nowMuted ? '🔈' : '🔊';
+/* ---------- Intro title screen: start BGM on first click ---------- */
+const intro = document.getElementById('intro');
+intro.addEventListener('click', async ()=>{
+  intro.style.transition = 'opacity .35s ease';
+  intro.style.opacity = '0';
+  setTimeout(()=> intro.remove(), 380);
+  try { await bgm.play(); } catch {}
+  muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
 });
 
 /* helpers */
