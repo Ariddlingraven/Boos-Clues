@@ -357,7 +357,10 @@ window.addEventListener('pointerup',()=>{ if(!dragging) return; dragging=false; 
 window.addEventListener('pointermove',e=>{ if(!dragging) return; const dx=e.clientX-sx, dy=e.clientY-sy; rotY+=dx*0.25; rotX-=dy*0.25; vy=dx*0.15; vx=-dy*0.15; sx=e.clientX; sy=e.clientY; updateCube(); });
 
 scene.addEventListener('mousemove', e=>{ const r=scene.getBoundingClientRect(); cube.style.setProperty('--hx', ((e.clientX-r.left)/r.width*100).toFixed(1)+'%'); cube.style.setProperty('--hy', ((e.clientY-r.top)/r.height*100).toFixed(1)+'%'); });
-
+/* Style for the right face with the new totem texture */
+.face.right {
+  background-image: url('firstpuzzletexturepng.png');
+}
 /* ------ toolbar & inventory ------ */
 const logEl=document.getElementById('log'); function log(t){ logEl.textContent=t; }
 const inv = document.getElementById('inventory');
