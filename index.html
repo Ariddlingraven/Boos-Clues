@@ -648,31 +648,80 @@ window.addEventListener('mousemove', (e)=>{
   magInner.style.transform = `translate(${-sx*SCALE + R}px, ${-sy*SCALE + R}px) scale(${SCALE})`;
 }, { passive:true });
 
-/* ---------- Intro title screen: start BGM on first click ---------- */
-const intro = document.getElementById('intro');
-intro.addEventListener('click', async ()=>{
-  intro.style.transition = 'opacity .35s ease';
-  intro.style.opacity = '0';
-  setTimeout(()=> intro.remove(), 380);
-  try { await bgm.play(); } catch {}
-  muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
+/* ---------- Intro title screen: robust start handler ---------- */
+(function(){
+  const intro = document.getElementById('intro');
+  if (!intro) return;
+
+  async function startGame(){
+    // fade out then remove
+    try {
+      intro.style.transition = 'opacity .35s ease';
+      intro.style.opacity = '0';
+      setTimeout(()=> intro.remove(), 380);
+    } catch { try { intro.remove(); } catch {} }
+
+    // best-effort bgm
+    try { await bgm.play(); } catch {}
+
+    // reflect mute state
+    try { muteBtn.textContent = bgm.muted ? '🔇' : '🔊'; } catch {}
+
+    // cleanup fallbacks
+    window.removeEventListener('pointerdown', onAnyPointer);
+    window.removeEventListener('keydown', onAnyKey);
+  }
+
+  // primary: click/tap on the intro itself
+  intro.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    startGame();
+  }, { once:true });
+
+  // fallback: ANY user interaction
+  function onAnyPointer(){ if (document.body.contains(intro)) startGame(); }
+  function onAnyKey(){ if (document.body.contains(intro)) startGame(); }
+  window.addEventListener('pointerdown', onAnyPointer, { passive:true });
+  window.addEventListener('keydown', onAnyKey);
+})();
+
+/* ---------- Puzzle 1 data ---------- */
+const P1_GLYPHS = [
+  { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
+  { id:'blood',   src:'blood.png',    title:'Blood' },
+  { id:'bat',     src:'bat.png',      title:'Bat' },
+  { id:'bird',    src:'bird.png',     title:'Bird' },
+  { id:'child',   src:'child.png',    title:'Child' },
+  { id:'cloud',   src:'cloud.png',    title:'Mist' },
+  { id:'moon',    src:'moon.png',     title:'Moon' },
+  { id:'oyster',  src:'oyster.png',   title:'Oyster' },
+  { id:'sun',     src:'sun.png',      title:'Sun' },
+  { id:'vampire', src:'vampire.png',  title:'Vampire' },
+  { id:'walrus',  src:'walrus.png',   title:'Walrus' },
+];
+// correct order top→bottom (update if needed)
+const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
+
+/* ---------- Open Puzzle 1 from right face or hotspot ---------- */
+const rightFace = document.querySelector('.face.right');
+const p1Hot     = document.getElementById('p1Hot');
+
+function openPuzzleClick(e){
+  if (document.body.classList.contains('magnify-on')) return;
+  e?.stopPropagation();
+  renderP1();
+}
+if (p1Hot)     p1Hot.addEventListener('click', openPuzzleClick);
+if (rightFace) rightFace.addEventListener('click', (e)=>{
+  // let the button handler run if you actually clicked it
+  if (e.target.closest('#p1Hot')) return;
+  openPuzzleClick(e);
 });
 
-/* ---------- Puzzle 1: Five Tiki Rotary Dials ---------- */
-document.getElementById('p1Hot').addEventListener('click', ()=>{
-  if (document.body.classList.contains('magnify-on')) return;
+/* ---------- Puzzle 1 renderer ---------- */
 function renderP1(){
   openOverlay();
-
-  // Fallback: clicking anywhere on the right face also opens the puzzle
-document.querySelector('.face.right').addEventListener('click', (e)=>{
-  // Ignore if magnifier is armed or if you actually clicked the bat hotspot (when rotated)
-  if (document.body.classList.contains('magnify-on')) return;
-  // If you did click the button, let that handler run; otherwise open
-  if (!e.target.closest('#p1Hot')) renderP1();
-});
-
-  // Build the puzzle UI with the stack container
   panel.innerHTML = `
     <h3>The Totem Stirs</h3>
     <div class="p1box" id="p1box">
@@ -682,27 +731,23 @@ document.querySelector('.face.right').addEventListener('click', (e)=>{
         <div>Small oysters fled from cozy beds to hear one who sang so sweet…</div>
         <div>…and tusks bowed beneath the veil as blood remembered the child.</div>
       </div>
-
-      <!-- The five heads get appended here -->
       <div class="p1-stack" id="p1stack"></div>
-
       <div class="p1-eyes" aria-hidden="true"></div>
     </div>
     <p id="p1msg">Arrange each tiki to the correct glyph.</p>
   `;
 
-  const box   = document.getElementById('p1box');
-  const stack = document.getElementById('p1stack');  // << append targets here
-  const msg   = document.getElementById('p1msg');
+  const box       = document.getElementById('p1box');
+  const stack     = document.getElementById('p1stack');
+  const msg       = document.getElementById('p1msg');
+  const sfxRotate = document.getElementById('sfxRotate');
 
   const tikiIndex = P1_GLYPHS.findIndex(g => g.id === 'tiki');
   const indices   = new Array(5).fill(tikiIndex);
   const btns      = [];
   let   locked    = false;
 
-  // Optional rotate sfx (ensure <audio id="sfxRotate" ...> exists in markup)
-  const sfxRotate = document.getElementById('sfxRotate');
-
+  // build 5 rotary heads
   for (let i = 0; i < 5; i++){
     const btn = document.createElement('button');
     btn.className = 'p1-head';
@@ -720,22 +765,21 @@ document.querySelector('.face.right').addEventListener('click', (e)=>{
       // advance to next glyph
       indices[i] = (indices[i] + 1) % P1_GLYPHS.length;
       const g = P1_GLYPHS[indices[i]];
-      img.src = g.src;
-      img.title = g.title;
+      img.src = g.src; img.title = g.title;
 
-      // rotary animation — random flip direction
+      // quick spin effect
       const spinY = Math.random() > 0.5 ? 360 : -360;
       img.style.transform = `rotateY(${spinY}deg)`;
       setTimeout(()=>{ img.style.transform = ''; }, 320);
 
-      // sfx
+      // rotate sound
       try { if (sfxRotate){ sfxRotate.currentTime = 0; sfxRotate.play(); } } catch {}
 
       if (p1Solved(indices)){
         locked = true;
         msg.textContent = 'The carvings align…';
 
-        // Staggered reset back to base tiki with random spin; light the eyes at the end
+        // Stagger reset back to tiki + eye glow
         btns.forEach(({btn, img}, j)=>{
           setTimeout(()=>{
             const spin = Math.random() > 0.5 ? 360 : -360;
@@ -744,9 +788,7 @@ document.querySelector('.face.right').addEventListener('click', (e)=>{
               indices[j] = tikiIndex;
               img.src = P1_GLYPHS[tikiIndex].src;
               btn.style.transform = '';
-              if (j === btns.length - 1){
-                box.classList.add('solved');
-              }
+              if (j === btns.length - 1) box.classList.add('solved');
             }, 260);
           }, j * 220);
         });
@@ -756,12 +798,12 @@ document.querySelector('.face.right').addEventListener('click', (e)=>{
       }
     });
 
-    // Append head to the grid container (NOT to the box)
     stack.appendChild(btn);
     btns.push({btn, img});
   }
 }
 
+/* ---------- Puzzle 1 helper ---------- */
 function p1Solved(indices){
   if (indices.length !== P1_SOLUTION.length) return false;
   for (let i=0; i<indices.length; i++){
@@ -769,6 +811,21 @@ function p1Solved(indices){
   }
   return true;
 }
+
+/* ---- (optional) last-resort intro remover in capture phase ----
+(function(){
+  const intro = document.getElementById('intro');
+  if (!intro) return;
+  function nukeIntro(){
+    try { intro.remove(); } catch {}
+    document.removeEventListener('click', nukeIntro, true);
+    try { bgm.play(); } catch {}
+    try { muteBtn.textContent = bgm.muted ? '🔇' : '🔊'; } catch {}
+  }
+  document.addEventListener('click', nukeIntro, true);
+})();
+*/
+
 /* boot */
 updateCube(); // shows the RIGHT face at load now
 </script>
