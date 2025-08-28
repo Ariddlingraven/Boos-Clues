@@ -691,7 +691,6 @@ window.addEventListener('mousemove', (e)=>{
   window.addEventListener('pointerdown', onAnyPointer, { passive:true });
   window.addEventListener('keydown', onAnyKey);
 })();
-<script>
 // --- sanity check: does the right-face texture actually load?
 (function(){
   const url = 'FirstPuzzleTexturepng.png?v=2';
@@ -700,7 +699,6 @@ window.addEventListener('mousemove', (e)=>{
   img.onerror = ()=> console.error('[RIGHT FACE] FAILED to load → check path/case/folder:', url);
   img.src = url;
 })();
-</script>
 /* ---------- Puzzle 1 data ---------- */
 const P1_GLYPHS = [
   { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
