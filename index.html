@@ -1628,6 +1628,20 @@ function p1IsSolved(indices){
 
 /* boot */
 updateCube(); // shows the RIGHT face at load now
+/* ---- Last-resort intro remover (runs before other handlers) ---- */
+(function(){
+  const intro = document.getElementById('intro');
+  if (!intro) return;
+
+  function nukeIntro(){
+    try { intro.remove(); } catch {}
+    document.removeEventListener('click', nukeIntro, true);
+    // best-effort bgm
+    try { bgm.play(); } catch {}
+    try { muteBtn.textContent = bgm.muted ? '🔇' : '🔊'; } catch {}
+  }
+  document.addEventListener('click', nukeIntro, true); // capture phase
+})();
 </script>
 </body>
 </html>
