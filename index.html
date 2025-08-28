@@ -49,17 +49,23 @@
     radial-gradient(200% 200% at 50% 50%, transparent 60%, rgba(255,255,255,.025) 100%);}
   .front{transform: translateZ(var(--half));}
   .back{transform: rotateY(180deg) translateZ(var(--half));}
-.right{  transform: rotateY( 90deg) translateZ(var(--half)); }
+.right{
+  transform: rotateY( 90deg) translateZ(var(--half));
+  /* use your uploaded texture exactly as the face image */
+  background:#111 url('FirstPuzzleTexturepng.png') center/cover no-repeat;
+}
 .left{   transform: rotateY(-90deg) translateZ(var(--half)); }
 .top{    transform: rotateX( 90deg) translateZ(var(--half)); }
 .bottom{ transform: rotateX(-90deg) translateZ(var(--half)); }
 
-  /* BIGGER / EASIER hotspot on the right cube face */
+/* BIG/EASY hotspot on the right cube face */
 .hot-right{
-  position:absolute; inset:0;           /* full face */
-  background:transparent; border:0;
-  cursor:pointer;
-  z-index: 5;                            /* above the face texture */
+  position:absolute;
+  inset:0;                 /* cover the full face */
+  background:transparent;
+  border:0;
+  cursor:pointer;          /* normal pointer, not zoom */
+  z-index:10;              /* above face and its ::after light sheen */
 }
   /* Bat hotspot on front */
   .hot-bat{
