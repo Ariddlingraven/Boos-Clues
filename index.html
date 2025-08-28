@@ -1471,14 +1471,45 @@ window.addEventListener('mousemove', (e)=>{
 }, { passive:true });
 
 /* ---------- Intro title screen: start BGM on first click ---------- */
-const intro = document.getElementById('intro');
-intro.addEventListener('click', async ()=>{
-  intro.style.transition = 'opacity .35s ease';
-  intro.style.opacity = '0';
-  setTimeout(()=> intro.remove(), 380);
-  try { await bgm.play(); } catch {}
-  muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
-});
+/* ---------- Intro title screen: robust start handler ---------- */
+(function(){
+  const intro = document.getElementById('intro');
+  if (!intro) return;
+
+  async function startGame(){
+    // fade out; then remove no matter what
+    try {
+      intro.style.transition = 'opacity .35s ease';
+      intro.style.opacity = '0';
+      setTimeout(()=> intro.remove(), 380);
+    } catch {
+      try { intro.remove(); } catch {}
+    }
+
+    // best-effort bgm
+    try { await bgm.play(); } catch {}
+
+    // reflect mute state
+    try { muteBtn.textContent = bgm.muted ? '🔇' : '🔊'; } catch {}
+
+    // cleanup
+    window.removeEventListener('pointerdown', onAnyPointer);
+    window.removeEventListener('keydown', onAnyKey);
+  }
+
+  // primary: click/tap on the intro itself
+  intro.addEventListener('click', (e)=>{
+    e.preventDefault();
+    e.stopPropagation();
+    startGame();
+  }, { once:true });
+
+  // fallback: ANY user interaction
+  function onAnyPointer(){ if (document.body.contains(intro)) startGame(); }
+  function onAnyKey(){ if (document.body.contains(intro)) startGame(); }
+  window.addEventListener('pointerdown', onAnyPointer, { passive:true });
+  window.addEventListener('keydown', onAnyKey);
+})();
 /* ---------- Puzzle 1: Right-side tiki strip (updated with tiki reset + staggered reveal) ---------- */
 document.getElementById('p1Hot').addEventListener('click', () => {
   if (!document.body.classList.contains('magnify-on')) renderP1();
