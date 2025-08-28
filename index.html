@@ -49,31 +49,34 @@
     radial-gradient(200% 200% at 50% 50%, transparent 60%, rgba(255,255,255,.025) 100%);}
   .front{transform: translateZ(var(--half));}
   .back{transform: rotateY(180deg) translateZ(var(--half));}
-/* Right face texture — strong specificity, no shorthand resets */
-#cube .face.right{
-  transform: rotateY(90deg) translateZ(var(--half));
-  position: relative;
-  background-color:#111;                     /* base */
-  background-image: url('FirstPuzzleTexturepng.png?v=2'); /* your texture */
-  background-position: center;
-  background-size: cover;
-  background-repeat: no-repeat;
-  /* outline:2px solid magenta;  /* ← uncomment to see bounds while debugging */
-}
-  .hot-right{ position:absolute; inset:0; background:transparent; border:0; cursor:pointer; z-index:20; pointer-events:auto; }
-.left{   transform: rotateY(-90deg) translateZ(var(--half)); }
-.top{    transform: rotateX( 90deg) translateZ(var(--half)); }
-.bottom{ transform: rotateX(-90deg) translateZ(var(--half)); }
 
-/* BIG/EASY hotspot on the right cube face */
-.hot-right{
-  position:absolute;
-  inset:0;                 /* cover the full face */
-  background:transparent;
-  border:0;
-  cursor:pointer;          /* normal pointer, not zoom */
-  z-index:10;              /* above face and its ::after light sheen */
-}
+  /* Right face texture — strong specificity, no shorthand resets */
+  #cube .face.right{
+    transform: rotateY(90deg) translateZ(var(--half));
+    position:relative;
+    background-color:#111;
+    background-image: url('FirstPuzzleTexturepng.png?v=2');
+    background-position:center;
+    background-size:cover;
+    background-repeat:no-repeat;
+    /* outline:2px solid magenta;  /* ← uncomment to see the face bounds while debugging */
+  }
+
+  .hot-right{ position:absolute; inset:0; background:transparent; border:0; cursor:pointer; z-index:20; pointer-events:auto; }
+  .left{   transform: rotateY(-90deg) translateZ(var(--half)); }
+  .top{    transform: rotateX( 90deg) translateZ(var(--half)); }
+  .bottom{ transform: rotateX(-90deg) translateZ(var(--half)); }
+
+  /* BIG/EASY hotspot on the right cube face */
+  .hot-right{
+    position:absolute;
+    inset:0;
+    background:transparent;
+    border:0;
+    cursor:pointer;
+    z-index:10; /* above face & sheen */
+  }
+
   /* Bat hotspot on front */
   .hot-bat{
     position:absolute; top:10%; left:10%; width:30%; aspect-ratio:2/1; border-radius:.5rem;
@@ -82,7 +85,7 @@
     z-index:9;
   }
   .hot-bat:hover{ transform:translateY(-2px); filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
-  .magnify-on .hot-bat{ pointer-events:none; } /* block bat while scoping */
+  .magnify-on .hot-bat{ pointer-events:none; }
 
   /* Overlay (puzzle zoom) */
   #overlay{ position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; pointer-events:none; }
@@ -149,94 +152,77 @@
   .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
   @keyframes pop{ 0%{opacity:0; transform:translate(var(--x),var(--y)) scale(.4)} 40%{opacity:1} 100%{opacity:0; transform:translate(calc(var(--x) * 2), calc(var(--y) * 2)) scale(.1)} }
 
-/* ---------- Puzzle 1: stacked tiki-head dials ---------- */
-.p1box{
-  position:relative;
-  width:min(700px, 95vw);
-  height:min(520px, 74vh);
-  background:#111;
-  border:1px solid #3b3122;
-  border-radius:12px;
-  overflow:hidden;
-  box-shadow:inset 0 0 40px rgba(0,0,0,.55);
-}
+  /* ---------- Puzzle 1: stacked tiki-head dials ---------- */
+  .p1box{
+    position:relative;
+    width:min(700px, 95vw);
+    height:min(520px, 74vh);
+    background:#111;
+    border:1px solid #3b3122;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:inset 0 0 40px rgba(0,0,0,.55);
+  }
+  .p1-stack{
+    position:absolute;
+    inset:6% 0 8% 0;
+    display:grid;
+    grid-template-rows:repeat(5, 1fr);
+    place-items:center;
+    gap:6px;
+  }
+  .p1-head{
+    width:28%;
+    aspect-ratio:1/1;
+    background:none; border:0; padding:0;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transform:rotate(0deg);
+    transition:transform .28s ease;
+  }
+  .p1-head img{
+    width:100%; height:auto; display:block; pointer-events:none;
+    transition:transform .32s ease;
+  }
+  @media (max-width: 560px){
+    .p1box{ height:min(520px, 70vh); }
+    .p1-head{ width:34%; }
+  }
+  .p1-eyes{
+    position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .25s ease;
+    background:
+      radial-gradient(10px 8px at 50% 12%, rgba(255,0,0,.9), transparent 60%),
+      radial-gradient(10px 8px at 50% 32%, rgba(255,0,0,.9), transparent 60%),
+      radial-gradient(10px 8px at 50% 52%, rgba(255,0,0,.9), transparent 60%),
+      radial-gradient(10px 8px at 50% 72%, rgba(255,0,0,.9), transparent 60%),
+      radial-gradient(10px 8px at 50% 92%, rgba(255,0,0,.9), transparent 60%);
+    mix-blend-mode:screen;
+  }
+  .p1box.solved .p1-eyes{ opacity:1; }
 
-/* evenly stack 5 heads */
-.p1-stack{
-  position:absolute;
-  inset:6% 0 8% 0;               /* a little room for whispers & eyes */
-  display:grid;
-  grid-template-rows:repeat(5, 1fr);
-  place-items:center;
-  gap:6px;                        /* slightly tighter than before */
-}
+  .p1-whispers{
+    position:absolute; inset:8% 6%;
+    pointer-events:none;
+    font:10px/1.3 "MrDarcy", serif;
+    color:rgba(255,255,255,0.04);
+    letter-spacing:.06em; filter:blur(.25px);
+  }
+  .magnify-on .p1-whispers{
+    color:#b00404;
+    text-shadow:0 0 6px rgba(176,4,4,.7), 0 0 12px rgba(176,4,4,.45);
+  }
 
-/* each head behaves like a rotary dial */
-.p1-head{
-  width:28%;                      /* <<< the key change: smaller so 5 fit easily */
-  aspect-ratio:1/1;
-  background:none; border:0; padding:0;
-  display:flex; align-items:center; justify-content:center;
-  cursor:pointer;
-  transform:rotate(0deg);
-  transition:transform .28s ease;
-}
-.p1-head img{
-  width:100%; height:auto; display:block; pointer-events:none;
-  transition:transform .32s ease;
-}
-
-/* small screens: allow a bit larger while still fitting all five */
-@media (max-width: 560px){
-  .p1box{ height:min(520px, 70vh); }
-  .p1-head{ width:34%; }
-}
-/* eyes glow after solve */
-.p1-eyes{
-  position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .25s ease;
-  background:
-    radial-gradient(10px 8px at 50% 12%, rgba(255,0,0,.9), transparent 60%),
-    radial-gradient(10px 8px at 50% 32%, rgba(255,0,0,.9), transparent 60%),
-    radial-gradient(10px 8px at 50% 52%, rgba(255,0,0,.9), transparent 60%),
-    radial-gradient(10px 8px at 50% 72%, rgba(255,0,0,.9), transparent 60%),
-    radial-gradient(10px 8px at 50% 92%, rgba(255,0,0,.9), transparent 60%);
-  mix-blend-mode:screen;
-}
-.p1box.solved .p1-eyes{ opacity:1; }
-
-/* whispers (stanzas) — faint; glow blood-red with lens */
-.p1-whispers{
-  position:absolute; inset:8% 6%;
-  pointer-events:none;
-  font:10px/1.3 "MrDarcy", serif;
-  color:rgba(255,255,255,0.04);
-  letter-spacing:.06em; filter:blur(.25px);
-}
-.magnify-on .p1-whispers{
-  color:#b00404;
-  text-shadow:0 0 6px rgba(176,4,4,.7), 0 0 12px rgba(176,4,4,.45);
-}
-
-/* small screens: slightly larger heads while keeping all visible */
-@media (max-width: 560px){
-  .p1box{ height:min(520px, 70vh); }
-  .p1-head{ width:42%; }
-}
-/* whispers (stanzas) — faint; glow blood-red with lens */
-.p1-whispers{
-  position:absolute; inset:8% 6%;
-  pointer-events:none;
-  font:10px/1.3 "MrDarcy", serif;
-  color:rgba(255,255,255,0.04);
-  letter-spacing:.06em; filter:blur(.25px);
-}
-.magnify-on .p1-whispers{
-  color:#b00404;
-  text-shadow:0 0 6px rgba(176,4,4,.7), 0 0 12px rgba(176,4,4,.45);
-}
+  @media (max-width: 560px){
+    .p1box{ height:min(520px, 70vh); }
+    .p1-head{ width:42%; }
+  }
 
   /* Intro title screen */
-  #intro{ position:fixed; inset:0; background:rgba(0,0,0,0.82); color:#e9dfcf; display:flex; align-items:center; justify-content:center; text-align:center; z-index:10000; padding:6vh 6vw; cursor:pointer; }
+  #intro{
+    position:fixed; inset:0; background:rgba(0,0,0,0.82);
+    color:#e9dfcf; display:flex; align-items:center; justify-content:center; text-align:center;
+    z-index:10000; padding:6vh 6vw; cursor:pointer;
+  }
   #intro .inner{ max-width:900px; line-height:1.5; font-size:clamp(18px, 2.2vw, 28px); text-shadow:0 2px 14px rgba(0,0,0,.7); }
   #intro .tap{ margin-top:1.2rem; font-size:0.85em; color:#cdbb9a; opacity:.9; }
 </style>
@@ -333,13 +319,13 @@ function slideSfx(){
 
 /* ------ cube rotation (pointer events; hotspot gate) ------ */
 const cube=document.getElementById('cube'), scene=document.getElementById('scene');
-let rotY=-90, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0; // <<< face the RIGHT side at load
+let rotY=-90, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0; // face RIGHT at load
 function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}deg)`; }
 function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
 
 cube.addEventListener('pointerdown', e => {
-  if (document.body.classList.contains('magnify-on')) return; // no drag while scoping
-  if (e.target.closest('.hot-bat')) return;  // leave bat click alone
+  if (document.body.classList.contains('magnify-on')) return;
+  if (e.target.closest('.hot-bat')) return;
   dragging = true;
   if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
   sx = e.clientX; sy = e.clientY;
@@ -498,7 +484,7 @@ lens.addEventListener('click', ()=>{
 
 /* ------ bat hotspot → pre-puzzle ------ */
 document.getElementById('batHotspot').addEventListener('click', ()=>{
-  if (document.body.classList.contains('magnify-on')) return; // block while scoping
+  if (document.body.classList.contains('magnify-on')) return;
   renderP0();
 });
 
@@ -602,7 +588,7 @@ function renderP0(){
       flashMsg.textContent = "";
       log('Something below slides open…');
       setTimeout(()=>{ unlatchDrawerAnimated(); }, 2000);
-    }, 1000); /* 1s red */
+    }, 1000);
   }
 }
 
@@ -664,38 +650,30 @@ window.addEventListener('mousemove', (e)=>{
   if (!intro) return;
 
   async function startGame(){
-    // fade out then remove
     try {
       intro.style.transition = 'opacity .35s ease';
       intro.style.opacity = '0';
       setTimeout(()=> intro.remove(), 380);
     } catch { try { intro.remove(); } catch {} }
-
-    // best-effort bgm
     try { await bgm.play(); } catch {}
-
-    // reflect mute state
     try { muteBtn.textContent = bgm.muted ? '🔇' : '🔊'; } catch {}
-
-    // cleanup fallbacks
     window.removeEventListener('pointerdown', onAnyPointer);
     window.removeEventListener('keydown', onAnyKey);
   }
 
-  // primary: click/tap on the intro itself
   intro.addEventListener('click', (e)=>{
     e.preventDefault();
     e.stopPropagation();
     startGame();
   }, { once:true });
 
-  // fallback: ANY user interaction
   function onAnyPointer(){ if (document.body.contains(intro)) startGame(); }
   function onAnyKey(){ if (document.body.contains(intro)) startGame(); }
   window.addEventListener('pointerdown', onAnyPointer, { passive:true });
   window.addEventListener('keydown', onAnyKey);
 })();
-// --- sanity check: does the right-face texture actually load?
+
+/* --- sanity check: does the right-face texture actually load? --- */
 (function(){
   const url = 'FirstPuzzleTexturepng.png?v=2';
   const img = new Image();
@@ -703,6 +681,7 @@ window.addEventListener('mousemove', (e)=>{
   img.onerror = ()=> console.error('[RIGHT FACE] FAILED to load → check path/case/folder:', url);
   img.src = url;
 })();
+
 /* ---------- Puzzle 1 data ---------- */
 const P1_GLYPHS = [
   { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
@@ -717,13 +696,11 @@ const P1_GLYPHS = [
   { id:'vampire', src:'vampire.png',  title:'Vampire' },
   { id:'walrus',  src:'walrus.png',   title:'Walrus' },
 ];
-// correct order top→bottom (update if needed)
 const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
 
 /* ---------- Open Puzzle 1 from right face or hotspot ---------- */
 const rightFace = document.querySelector('.face.right');
 const p1Hot     = document.getElementById('p1Hot');
-
 function openPuzzleClick(e){
   if (document.body.classList.contains('magnify-on')) return;
   if (e) e.stopPropagation();
@@ -731,7 +708,6 @@ function openPuzzleClick(e){
 }
 if (p1Hot)     p1Hot.addEventListener('click', openPuzzleClick);
 if (rightFace) rightFace.addEventListener('click', (e)=>{
-  // let the button handler run if you actually clicked it
   if (e.target.closest('#p1Hot')) return;
   openPuzzleClick(e);
 });
@@ -764,7 +740,6 @@ function renderP1(){
   const btns      = [];
   let   locked    = false;
 
-  // build 5 rotary heads
   for (let i = 0; i < 5; i++){
     const btn = document.createElement('button');
     btn.className = 'p1-head';
@@ -779,24 +754,20 @@ function renderP1(){
     btn.addEventListener('click', ()=>{
       if (locked) return;
 
-      // advance to next glyph
       indices[i] = (indices[i] + 1) % P1_GLYPHS.length;
       const g = P1_GLYPHS[indices[i]];
       img.src = g.src; img.title = g.title;
 
-      // quick spin effect
       const spinY = Math.random() > 0.5 ? 360 : -360;
       img.style.transform = `rotateY(${spinY}deg)`;
       setTimeout(()=>{ img.style.transform = ''; }, 320);
 
-      // rotate sound
       try { if (sfxRotate){ sfxRotate.currentTime = 0; sfxRotate.play(); } } catch {}
 
       if (p1Solved(indices)){
         locked = true;
         msg.textContent = 'The carvings align…';
 
-        // Stagger reset back to tiki + eye glow
         btns.forEach(({btn, img}, j)=>{
           setTimeout(()=>{
             const spin = Math.random() > 0.5 ? 360 : -360;
@@ -829,22 +800,8 @@ function p1Solved(indices){
   return true;
 }
 
-/* ---- (optional) last-resort intro remover in capture phase ----
-(function(){
-  const intro = document.getElementById('intro');
-  if (!intro) return;
-  function nukeIntro(){
-    try { intro.remove(); } catch {}
-    document.removeEventListener('click', nukeIntro, true);
-    try { bgm.play(); } catch {}
-    try { muteBtn.textContent = bgm.muted ? '🔇' : '🔊'; } catch {}
-  }
-  document.addEventListener('click', nukeIntro, true);
-})();
-*/
-
 /* boot */
-updateCube(); // shows the RIGHT face at load now
+updateCube(); // shows the RIGHT face at load
 </script>
 </body>
 </html>
