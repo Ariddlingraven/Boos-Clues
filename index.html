@@ -49,11 +49,8 @@
     radial-gradient(200% 200% at 50% 50%, transparent 60%, rgba(255,255,255,.025) 100%);}
   .front{transform: translateZ(var(--half));}
   .back{transform: rotateY(180deg) translateZ(var(--half));}
-.right{
-  transform: rotateY( 90deg) translateZ(var(--half));
-  /* use your uploaded texture exactly as the face image */
-  background:#111 url('FirstPuzzleTexturepng.png') center/cover no-repeat;
-}
+.right{ transform: rotateY(90deg) translateZ(var(--half)); background:#111 url('FirstPuzzleTexturepng.png') center/cover no-repeat; position:relative; }
+.hot-right{ position:absolute; inset:0; background:transparent; border:0; cursor:pointer; z-index:20; pointer-events:auto; }
 .left{   transform: rotateY(-90deg) translateZ(var(--half)); }
 .top{    transform: rotateX( 90deg) translateZ(var(--half)); }
 .bottom{ transform: rotateX(-90deg) translateZ(var(--half)); }
@@ -145,8 +142,8 @@
 /* ---------- Puzzle 1: stacked tiki-head dials ---------- */
 .p1box{
   position:relative;
-  width:min(760px, 95vw);
-  height:min(540px, 72vh);
+  width:min(700px, 95vw);
+  height:min(520px, 74vh);
   background:#111;
   border:1px solid #3b3122;
   border-radius:12px;
@@ -154,19 +151,19 @@
   box-shadow:inset 0 0 40px rgba(0,0,0,.55);
 }
 
-/* grid to evenly stack 5 heads inside the box */
+/* evenly stack 5 heads */
 .p1-stack{
   position:absolute;
-  inset:6% 0 10% 0;              /* leave room at top/bottom for whispers & eyes */
+  inset:6% 0 8% 0;               /* a little room for whispers & eyes */
   display:grid;
   grid-template-rows:repeat(5, 1fr);
   place-items:center;
-  gap:8px;
+  gap:6px;                        /* slightly tighter than before */
 }
 
 /* each head behaves like a rotary dial */
 .p1-head{
-  width:36%;                      /* << key: fits all five comfortably */
+  width:28%;                      /* <<< the key change: smaller so 5 fit easily */
   aspect-ratio:1/1;
   background:none; border:0; padding:0;
   display:flex; align-items:center; justify-content:center;
@@ -176,9 +173,14 @@
 }
 .p1-head img{
   width:100%; height:auto; display:block; pointer-events:none;
-  transition:transform .32s ease;   /* flip/spin the image */
+  transition:transform .32s ease;
 }
 
+/* small screens: allow a bit larger while still fitting all five */
+@media (max-width: 560px){
+  .p1box{ height:min(520px, 70vh); }
+  .p1-head{ width:34%; }
+}
 /* eyes glow after solve */
 .p1-eyes{
   position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .25s ease;
@@ -661,6 +663,14 @@ document.getElementById('p1Hot').addEventListener('click', ()=>{
   if (document.body.classList.contains('magnify-on')) return;
 function renderP1(){
   openOverlay();
+
+  // Fallback: clicking anywhere on the right face also opens the puzzle
+document.querySelector('.face.right').addEventListener('click', (e)=>{
+  // Ignore if magnifier is armed or if you actually clicked the bat hotspot (when rotated)
+  if (document.body.classList.contains('magnify-on')) return;
+  // If you did click the button, let that handler run; otherwise open
+  if (!e.target.closest('#p1Hot')) renderP1();
+});
 
   // Build the puzzle UI with the stack container
   panel.innerHTML = `
