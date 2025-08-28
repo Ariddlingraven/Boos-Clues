@@ -659,27 +659,10 @@ intro.addEventListener('click', async ()=>{
 /* ---------- Puzzle 1: Five Tiki Rotary Dials ---------- */
 document.getElementById('p1Hot').addEventListener('click', ()=>{
   if (document.body.classList.contains('magnify-on')) return;
-  renderP1();
-});
-
-const P1_GLYPHS = [
-  { id:'tiki',    src:'tikihead.png', title:'Tiki Head' }, // base head (your uploaded image)
-  { id:'moon',    src:'moon.png',     title:'Moon' },
-  { id:'bat',     src:'bat.png',      title:'Bat' },
-  { id:'child',   src:'child.png',    title:'Child' },
-  { id:'blood',   src:'blood.png',    title:'Blood' },
-  { id:'vampire', src:'vampire.png',  title:'Vampire' },
-  { id:'cloud',   src:'cloud.png',    title:'Mist' },
-  { id:'oyster',  src:'oyster.png',   title:'Oyster' },
-  { id:'sun',     src:'sun.png',      title:'Sun' },
-  { id:'bird',    src:'bird.png',     title:'Bird' },
-  { id:'walrus',  src:'walrus.png',   title:'Walrus' },
-];
-// Correct top→bottom
-const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
-
 function renderP1(){
   openOverlay();
+
+  // Build the puzzle UI with the stack container
   panel.innerHTML = `
     <h3>The Totem Stirs</h3>
     <div class="p1box" id="p1box">
@@ -689,52 +672,60 @@ function renderP1(){
         <div>Small oysters fled from cozy beds to hear one who sang so sweet…</div>
         <div>…and tusks bowed beneath the veil as blood remembered the child.</div>
       </div>
+
+      <!-- The five heads get appended here -->
+      <div class="p1-stack" id="p1stack"></div>
+
       <div class="p1-eyes" aria-hidden="true"></div>
     </div>
     <p id="p1msg">Arrange each tiki to the correct glyph.</p>
   `;
 
-  const box = document.getElementById('p1box');
-  const msg = document.getElementById('p1msg');
-  const tikiIndex = P1_GLYPHS.findIndex(g => g.id === 'tiki');
-  const indices = new Array(5).fill(tikiIndex);
-  const btns = [];
-  let locked = false;
+  const box   = document.getElementById('p1box');
+  const stack = document.getElementById('p1stack');  // << append targets here
+  const msg   = document.getElementById('p1msg');
 
-  // Optional SFX (add <audio id="sfxRotate" src="rotate.mp3" preload="auto"></audio> near your other audio tags)
+  const tikiIndex = P1_GLYPHS.findIndex(g => g.id === 'tiki');
+  const indices   = new Array(5).fill(tikiIndex);
+  const btns      = [];
+  let   locked    = false;
+
+  // Optional rotate sfx (ensure <audio id="sfxRotate" ...> exists in markup)
   const sfxRotate = document.getElementById('sfxRotate');
 
-  for (let i=0; i<5; i++){
+  for (let i = 0; i < 5; i++){
     const btn = document.createElement('button');
     btn.className = 'p1-head';
     btn.setAttribute('aria-label', `Tiki dial ${i+1}`);
 
     const img = new Image();
-    img.src = P1_GLYPHS[tikiIndex].src;
-    img.alt = '';
+    img.src   = P1_GLYPHS[tikiIndex].src;
+    img.alt   = '';
     img.title = P1_GLYPHS[tikiIndex].title;
     btn.appendChild(img);
 
     btn.addEventListener('click', ()=>{
       if (locked) return;
 
-      // Next glyph
+      // advance to next glyph
       indices[i] = (indices[i] + 1) % P1_GLYPHS.length;
-      img.src = P1_GLYPHS[indices[i]].src;
-      img.title = P1_GLYPHS[indices[i]].title;
+      const g = P1_GLYPHS[indices[i]];
+      img.src = g.src;
+      img.title = g.title;
 
-      // Animate like a rotary dial — random flip direction for variety
+      // rotary animation — random flip direction
       const spinY = Math.random() > 0.5 ? 360 : -360;
       img.style.transform = `rotateY(${spinY}deg)`;
-      setTimeout(()=>{ img.style.transform = ''; }, 350);
+      setTimeout(()=>{ img.style.transform = ''; }, 320);
 
-      // SFX
-      try { if (sfxRotate){ sfxRotate.currentTime = 0; sfxRotate.play(); } } catch{}
+      // sfx
+      try { if (sfxRotate){ sfxRotate.currentTime = 0; sfxRotate.play(); } } catch {}
 
       if (p1Solved(indices)){
         locked = true;
         msg.textContent = 'The carvings align…';
-        // Staggered reset to tiki + random direction; then light eyes
+
+        // Staggered reset back to base tiki with random spin; light the eyes at the end
         btns.forEach(({btn, img}, j)=>{
           setTimeout(()=>{
             const spin = Math.random() > 0.5 ? 360 : -360;
@@ -743,8 +734,10 @@ function renderP1(){
               indices[j] = tikiIndex;
               img.src = P1_GLYPHS[tikiIndex].src;
               btn.style.transform = '';
-              if (j === btns.length - 1) box.classList.add('solved');
-            }, 280);
+              if (j === btns.length - 1){
+                box.classList.add('solved');
+              }
+            }, 260);
           }, j * 220);
         });
       } else {
@@ -753,7 +746,8 @@ function renderP1(){
       }
     });
 
-    box.appendChild(btn);
+    // Append head to the grid container (NOT to the box)
+    stack.appendChild(btn);
     btns.push({btn, img});
   }
 }
