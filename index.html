@@ -619,13 +619,15 @@ intro.addEventListener('click', async ()=>{
   try { await bgm.play(); } catch {}
   muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
 });
-/* ---------- Puzzle 1: Right-side tiki strip (updated with tiki reset + staggered reveal) ---------- */
-document.getElementById('p1Hot').addEventListener('click', () => {
-  if (!document.body.classList.contains('magnify-on')) renderP1();
+
+/* ---------- Puzzle 1: Five Tiki Rotary Dials ---------- */
+document.getElementById('p1Hot').addEventListener('click', ()=>{
+  if (document.body.classList.contains('magnify-on')) return;
+  renderP1();
 });
 
 const P1_GLYPHS = [
-  { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
+  { id:'tiki',    src:'tikihead.png', title:'Tiki Head' }, // base head (your uploaded image)
   { id:'moon',    src:'moon.png',     title:'Moon' },
   { id:'bat',     src:'bat.png',      title:'Bat' },
   { id:'child',   src:'child.png',    title:'Child' },
@@ -637,7 +639,7 @@ const P1_GLYPHS = [
   { id:'bird',    src:'bird.png',     title:'Bird' },
   { id:'walrus',  src:'walrus.png',   title:'Walrus' },
 ];
-
+// Correct top→bottom
 const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
 
 function renderP1(){
@@ -647,84 +649,83 @@ function renderP1(){
     <div class="p1box" id="p1box">
       <div class="p1-whispers" aria-hidden="true">
         <div>The sun was shining on the sea in the middle of the night.</div>
-        <div>Its palest blues and darkest hues reflected oh so bright.</div>
         <div>You could not see a cloud because no cloud was in the sky.</div>
-        <div>Small oysters fled from cozy beds to hear one who sang so sweet.</div>
-        <div>And so the cunning walrus ate the oysters one by one.</div>
+        <div>Small oysters fled from cozy beds to hear one who sang so sweet…</div>
+        <div>…and tusks bowed beneath the veil as blood remembered the child.</div>
       </div>
       <div class="p1-eyes" aria-hidden="true"></div>
     </div>
-    <p id="p1msg">Arrange the glyphs within each tiki head.</p>
+    <p id="p1msg">Arrange each tiki to the correct glyph.</p>
   `;
 
   const box = document.getElementById('p1box');
   const msg = document.getElementById('p1msg');
-  const audioRotate = document.getElementById('sfxRotate');
-
   const tikiIndex = P1_GLYPHS.findIndex(g => g.id === 'tiki');
-  const indices = new Array(5).fill(0);
+  const indices = new Array(5).fill(tikiIndex);
   const btns = [];
   let locked = false;
 
-  for (let i = 0; i < 5; i++) {
+  // Optional SFX (add <audio id="sfxRotate" src="rotate.mp3" preload="auto"></audio> near your other audio tags)
+  const sfxRotate = document.getElementById('sfxRotate');
+
+  for (let i=0; i<5; i++){
     const btn = document.createElement('button');
     btn.className = 'p1-head';
-    btn.setAttribute('aria-label', `Tiki head ${i+1}`);
+    btn.setAttribute('aria-label', `Tiki dial ${i+1}`);
 
     const img = new Image();
     img.src = P1_GLYPHS[tikiIndex].src;
     img.alt = '';
+    img.title = P1_GLYPHS[tikiIndex].title;
     btn.appendChild(img);
 
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', ()=>{
       if (locked) return;
+
+      // Next glyph
       indices[i] = (indices[i] + 1) % P1_GLYPHS.length;
       img.src = P1_GLYPHS[indices[i]].src;
       img.title = P1_GLYPHS[indices[i]].title;
 
-      // Rotate effect (optional)
-      const dir = Math.random() > 0.5 ? 360 : -360;
-      btn.style.transform = `rotate(${dir}deg)`;
-      setTimeout(() => { btn.style.transform = `rotate(0deg)`; }, 300);
+      // Animate like a rotary dial — random flip direction for variety
+      const spinY = Math.random() > 0.5 ? 360 : -360;
+      img.style.transform = `rotateY(${spinY}deg)`;
+      setTimeout(()=>{ img.style.transform = ''; }, 350);
 
-      // Play rotate sound
-      try { audioRotate.currentTime = 0; audioRotate.play(); } catch {}
+      // SFX
+      try { if (sfxRotate){ sfxRotate.currentTime = 0; sfxRotate.play(); } } catch{}
 
-      if (p1IsSolved(indices)) {
+      if (p1Solved(indices)){
         locked = true;
-        msg.textContent = 'The glyphs align. Something awakens.';
-        try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
-
-        // Reset to tiki head staggered
-        btns.forEach(({ img }, j) => {
-          const randDir = Math.random() > 0.5 ? 360 : -360;
-          setTimeout(() => {
-            indices[j] = tikiIndex;
-            img.src = P1_GLYPHS[tikiIndex].src;
-            btns[j].btn.style.transform = `rotate(${randDir}deg)`;
-            setTimeout(() => { btns[j].btn.style.transform = 'rotate(0deg)'; }, 300);
-            if (j === btns.length - 1) {
-              box.classList.add('solved');
-              log('The totem opens its eyes.');
-            }
-          }, j * 250);
+        msg.textContent = 'The carvings align…';
+        // Staggered reset to tiki + random direction; then light eyes
+        btns.forEach(({btn, img}, j)=>{
+          setTimeout(()=>{
+            const spin = Math.random() > 0.5 ? 360 : -360;
+            btn.style.transform = `rotate(${spin}deg)`;
+            setTimeout(()=>{
+              indices[j] = tikiIndex;
+              img.src = P1_GLYPHS[tikiIndex].src;
+              btn.style.transform = '';
+              if (j === btns.length - 1) box.classList.add('solved');
+            }, 280);
+          }, j * 220);
         });
       } else {
         box.classList.remove('solved');
-        msg.textContent = 'Arrange the glyphs within each tiki head.';
+        msg.textContent = 'Arrange each tiki to the correct glyph.';
       }
     });
 
     box.appendChild(btn);
-    btns.push({ btn, img });
+    btns.push({btn, img});
   }
 }
 
-function p1IsSolved(indices){
+function p1Solved(indices){
   if (indices.length !== P1_SOLUTION.length) return false;
-  for (let i = 0; i < indices.length; i++) {
-    const current = P1_GLYPHS[indices[i]].id;
-    if (current !== P1_SOLUTION[i]) return false;
+  for (let i=0; i<indices.length; i++){
+    if (P1_GLYPHS[ indices[i] ].id !== P1_SOLUTION[i]) return false;
   }
   return true;
 }
