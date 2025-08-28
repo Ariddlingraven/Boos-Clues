@@ -709,7 +709,7 @@ const p1Hot     = document.getElementById('p1Hot');
 
 function openPuzzleClick(e){
   if (document.body.classList.contains('magnify-on')) return;
-  e?.stopPropagation();
+  if (e) e.stopPropagation();
   renderP1();
 }
 if (p1Hot)     p1Hot.addEventListener('click', openPuzzleClick);
