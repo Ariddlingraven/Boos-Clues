@@ -36,6 +36,7 @@
     filter:blur(2.8px) brightness(.45) saturate(.9) contrast(1.05); z-index:0;
   }
   #scene::after{content:""; position:absolute; inset:-10%; background:radial-gradient(circle at 50% 40%, transparent 40%, rgba(0,0,0,.55) 78%, rgba(0,0,0,.8) 100%); z-index:2; pointer-events:none;}
+  /* remove the translucent strip/pedestal bar */
   #pedestal{ display:none; }
 
   /* Cube */
@@ -80,50 +81,6 @@
   .panel h3{margin:.2rem 0 1rem; font-weight:700; letter-spacing:.06em; text-transform:uppercase}
   #backBtn{ position:absolute; top:10px; left:10px; z-index:11 }
 
-  /* Pre-puzzle view */
-  .batbox{ position:relative; width:min(700px,92vw); height:min(420px,68vh); background:#111; border:1px solid #3b3122; border-radius:12px; overflow:hidden; box-shadow:inset 0 0 40px rgba(0,0,0,.55); }
-  .batImg{ position:absolute; left:50%; top:50%; width:58%; max-width:560px; aspect-ratio:2.2/1;
-    transform:translate(-50%,-50%); background:url('batflap.png') center/contain no-repeat;
-    filter:drop-shadow(0 8px 18px rgba(0,0,0,.6)); cursor:pointer; pointer-events:auto;
-    transition:transform 2s ease, opacity .10s ease; will-change: transform; z-index:5; }
-  .batImg.slide{ transform:translate(160%,-50%); opacity:1; }
-
-  .needle{ position:absolute; left:50%; top:50%; width:62%; max-width:640px; aspect-ratio:1.7/1;
-    transform:translate(-50%,-50%); background:url('needle.png') center/contain no-repeat;
-    opacity:0; transition:opacity .65s ease; pointer-events:none; z-index:1; }
-  .needle.visible{ opacity:1; pointer-events:auto; }
-
-  .tipZone{ position:absolute; width:46px; height:46px; border-radius:50%; border:2px dashed rgba(220,180,120,.35); opacity:0; transition:opacity .2s; pointer-events:none; z-index:3; }
-  .tipZone.on{ opacity:1; pointer-events:auto; }
-  .holdRing{ position:absolute; inset:0; transform:rotate(-90deg); }
-  .holdRing circle{ fill:none; stroke:#d9b07c; stroke-width:3; stroke-dasharray:5 7; }
-
-  .holdMsg{ position:absolute; left:50%; bottom:12px; transform:translateX(-50%); color:#d9b25f; opacity:.9; font-size:.95rem; }
-
-  /* Full-screen red flash + message */
-  #screenFlash{ position:fixed; inset:0; background:#550000; opacity:0; transition:opacity .28s ease;
-    z-index:9999; pointer-events:none; display:flex; align-items:center; justify-content:center; }
-  #flashMsg{ color:#f7e7d0; font-size:1.25rem; text-align:center; padding:0 1.2rem; opacity:0.95; text-shadow:0 2px 6px rgba(0,0,0,.5); }
-
-  /* Toolbar & inventory (visible while zoomed) */
-  .ui{ position:relative; z-index:11; display:flex; align-items:center; gap:.5rem; padding:.5rem .8rem; background:linear-gradient(#0a0a0a,#0b0b0b); border-top:1px solid #1c1a15; height:var(--toolbarH); }
-  #log{ font-size:.95rem; color:#cbbd9a; opacity:.95; margin-right:.5rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .spacer{flex:1}
-  #inventory{ display:flex; gap:.5rem; align-items:center; overflow:auto; }
-  .item{ display:inline-flex; align-items:center; gap:.5rem; padding:.35rem .6rem; border-radius:.4rem; border:1px solid #3a2d1b; background:#151412; color:#e6e0d4; white-space:nowrap;}
-  .item.armed{ outline:2px solid var(--accent); }
-  .hud{ position:absolute; top:.75rem; right:1rem; color:#9b8f73; font-size:.9rem; opacity:.85; z-index:5 }
-
-  .item.icon{ padding:4px; border-radius:6px; display:inline-grid; place-items:center; width:40px; height:40px; }
-  .item.icon img{ width:28px; height:28px; display:block; }
-
-  /* magnifier (live clone of the scene) */
-  .magnify-on #scene, .magnify-on .panel { cursor:none; }
-  #magScope{ position:fixed; left:0; top:0; width:180px; height:180px; border-radius:50%; overflow:hidden; pointer-events:none; z-index:9999; display:none; }
-  .magnify-on #magScope{ display:block; }
-  #magInner{ position:absolute; left:0; top:0; transform-origin:0 0; will-change:transform; width:0; height:0; }
-  #magFrame{ position:absolute; inset:0; pointer-events:none; filter:drop-shadow(0 4px 10px rgba(0,0,0,.5)); }
-
   /* Drawer */
   #drawer .tray{ position:absolute; left:0; bottom:0; width:100%; height:100%; background:url('inlet.png') center/contain no-repeat;
     transform:translateY(100%); transition: transform .55s ease-out; will-change:transform; }
@@ -138,85 +95,70 @@
   .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
   @keyframes pop{ 0%{opacity:0; transform:translate(var(--x),var(--y)) scale(.4)} 40%{opacity:1} 100%{opacity:0; transform:translate(calc(var(--x) * 2), calc(var(--y) * 2)) scale(.1)} }
 
-  /* Puzzle 1 — Five rotating tiki heads */
-  .p1box {
-    position: relative;
-    width: min(800px, 92vw); /* Wider for text */
-    height: min(600px, 80vh); /* Taller for heads */
-    background: #111 url('FirstPuzzleTexturepng.png') center/contain no-repeat;
-    border: 1px solid #3b3122;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: inset 0 0 40px rgba(0,0,0,0.85);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* ---------- Puzzle 1: stacked tiki-head dials (FORMATTING UPGRADE) ---------- */
+  .p1box{
+    position:relative;
+    width:min(700px, 95vw);
+    height:min(520px, 74vh);
+    background:#111;
+    border:1px solid #3b3122;
+    border-radius:12px;
+    overflow:hidden;
+    box-shadow:inset 0 0 40px rgba(0,0,0,.55);
   }
-  .p1-head-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-around;
-    height: 90%;
-    width: 20%;
+  /* evenly stack 5 heads with equal row heights */
+  .p1-stack{
+    position:absolute;
+    inset:6% 0 8% 0;
+    display:grid;
+    grid-template-rows:repeat(5, 1fr);
+    place-items:center;
+    gap:6px;
   }
-  .p1-head {
-    width: 100%;
-    aspect-ratio: 1/1;
-    background: none;
-    border: none;
-    padding: 0;
-    cursor: pointer;
-    transform: rotate(0deg);
-    transition: transform 0.3s ease;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  /* smaller clickable dials so all five fit comfortably */
+  .p1-head{
+    width:28%;
+    aspect-ratio:1/1;
+    background:none; border:0; padding:0;
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+    transform:rotate(0deg);
+    transition:transform .28s ease;
   }
-  .p1-head img {
-    width: 100%;
-    height: auto;
-    display: block;
-    pointer-events: none;
+  .p1-head img{
+    width:100%; height:auto; display:block; pointer-events:none;
+    transition:transform .32s ease;
   }
-  .p1-eyes {
-    position: absolute;
-    left: 40%; right: 40%; /* Centered on the totem */
-    top: 5%; bottom: 5%;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 0.25s ease;
+  /* eyes glow after solve */
+  .p1-eyes{
+    position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .25s ease;
     background:
-      radial-gradient(8px 6px at 50% 10.5%, rgba(255,0,0,0.9), transparent 70%),
-      radial-gradient(8px 6px at 50% 29.5%, rgba(255,0,0,0.9), transparent 70%),
-      radial-gradient(8px 6px at 50% 49.5%, rgba(255,0,0,0.9), transparent 70%),
-      radial-gradient(8px 6px at 50% 69.5%, rgba(255,0,0,0.9), transparent 70%),
-      radial-gradient(8px 6px at 50% 89.5%, rgba(255,0,0,0.9), transparent 70%);
-    mix-blend-mode: screen;
+      radial-gradient(10px 8px at 50% 12%, rgba(255,0,0,.9), transparent 60%),
+      radial-gradient(10px 8px at 50% 32%, rgba(255,0,0,.9), transparent 60%),
+      radial-gradient(10px 8px at 50% 52%, rgba(255,0,0,.9), transparent 60%),
+      radial-gradient(10px 8px at 50% 72%, rgba(255,0,0,.9), transparent 60%),
+      radial-gradient(10px 8px at 50% 92%, rgba(255,0,0,.9), transparent 60%);
+    mix-blend-mode:screen;
   }
-  .p1box.solved .p1-eyes {
-    opacity: 1;
-  }
-  .p1-whispers {
-    position: absolute;
-    width: 35%; /* Give space for text */
-    height: 80%;
-    top: 10%;
-    pointer-events: none;
-    font: 12px/1.5 "MrDarcy", serif;
-    color: rgba(255,255,255,0.0); /* Initially invisible */
-    letter-spacing: .06em;
-    filter: blur(.4px);
-    display: flex;
-    flex-direction: column;
-    justify-content: space-around;
-  }
-  .p1-whispers.left { left: 5%; text-align: right; }
-  .p1-whispers.right { right: 5%; text-align: left; }
+  .p1box.solved .p1-eyes{ opacity:1; }
 
-  .magnify-on .p1-whispers {
-    color: #b00404;
-    text-shadow: 0 0 6px rgba(176,4,4,.7), 0 0 12px rgba(176,4,4,.45);
+  /* whispers (stanzas) — faint; glow blood-red with lens */
+  .p1-whispers{
+    position:absolute; inset:8% 6%;
+    pointer-events:none;
+    font:10px/1.3 "MrDarcy", serif;
+    color:rgba(255,255,255,0.04);
+    letter-spacing:.06em; filter:blur(.25px);
+  }
+  .magnify-on .p1-whispers{
+    color:#b00404;
+    text-shadow:0 0 6px rgba(176,4,4,.7), 0 0 12px rgba(176,4,4,.45);
+  }
+
+  /* responsiveness: allow a little larger heads on small screens */
+  @media (max-width: 560px){
+    .p1box{ height:min(520px, 70vh); }
+    .p1-head{ width:34%; }
   }
 
   /* Intro title screen */
@@ -322,8 +264,8 @@ function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}
 function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
 
 cube.addEventListener('pointerdown', e => {
-  // FIX: Added .hot-right to prevent cube drag from blocking the puzzle hotspot click
-  if (e.target.closest('.hot-bat, .hot-right')) return;
+  if (document.body.classList.contains('magnify-on')) return; // no drag while scoping
+  if (e.target.closest('.hot-bat')) return;  // leave bat click alone
   dragging = true;
   if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
   sx = e.clientX; sy = e.clientY;
@@ -595,77 +537,50 @@ const magScope = document.getElementById('magScope');
 const magInner = document.getElementById('magInner');
 const SCALE = 2.25;
 const R = 90;
-let magReady = false, magClone, magSource, magRect;
+let magReady = false, sceneRect, magCloneCube, magCloneRoot;
 
-function sizeCloneToSource(){
-  magRect = magSource.getBoundingClientRect();
-  if (magClone){
-    magClone.style.width  = magRect.width  + 'px';
-    magClone.style.height = magRect.height + 'px';
-    magClone.style.position = 'relative';
+function sizeCloneToScene(){
+  sceneRect = scene.getBoundingClientRect();
+  if (magCloneRoot){
+    magCloneRoot.style.width  = sceneRect.width  + 'px';
+    magCloneRoot.style.height = sceneRect.height + 'px';
+    magCloneRoot.style.position = 'relative';
   }
-  magInner.style.width  = magRect.width  + 'px';
-  magInner.style.height = magRect.height + 'px';
+  magInner.style.width  = sceneRect.width  + 'px';
+  magInner.style.height = sceneRect.height + 'px';
 }
 
 function setMagnifier(on){
   if (on && !magReady){
-    // Determine if we are magnifying the scene or the puzzle panel
-    magSource = overlay.classList.contains('active') ? panel : scene;
-    
-    const clone = magSource.cloneNode(true);
+    const clone = scene.cloneNode(true);
     clone.setAttribute('aria-hidden','true');
     clone.style.pointerEvents = 'none';
     clone.style.userSelect = 'none';
-    
     magInner.innerHTML = '';
     magInner.appendChild(clone);
-    magClone = clone;
+    magCloneRoot = clone;
+    magCloneCube  = clone.querySelector('#cube');
     magReady = true;
   }
-  
-  if (on) {
-    magSource = overlay.classList.contains('active') ? panel : scene;
-    sizeCloneToSource();
-  } else {
-    magReady = false;
-    magClone = null;
-    magInner.innerHTML = '';
-  }
+  if (on){ sizeCloneToScene(); }
 }
 
-window.addEventListener('resize', ()=>{ if (magReady) sizeCloneToSource(); });
+window.addEventListener('resize', ()=>{ if (magReady) sizeCloneToScene(); });
 
 window.addEventListener('mousemove', (e)=>{
-  const magnifying = document.body.classList.contains('magnify-on');
+  const magnifying = document.body.classList.contains('magnify-on') && magReady;
   if (!magnifying) return;
-  
-  // If the source changes (e.g., closing overlay), reset magnifier
-  const currentSource = overlay.classList.contains('active') ? panel : scene;
-  if (magSource !== currentSource) {
-      setMagnifier(false);
-      setMagnifier(true);
+  if (magCloneCube){
+    magCloneCube.style.transform = cube.style.transform;
+    const cs = getComputedStyle(cube);
+    magCloneCube.style.setProperty('--hx', cs.getPropertyValue('--hx') || '50%');
+    magCloneCube.style.setProperty('--hy', cs.getPropertyValue('--hy') || '40%');
   }
-  
-  if (!magReady) return;
-
-  // If cloning the scene, keep the cube rotation in sync
-  if (magSource === scene) {
-    const magCloneCube = magClone.querySelector('#cube');
-    if (magCloneCube) {
-        magCloneCube.style.transform = cube.style.transform;
-        const cs = getComputedStyle(cube);
-        magCloneCube.style.setProperty('--hx', cs.getPropertyValue('--hx') || '50%');
-        magCloneCube.style.setProperty('--hy', cs.getPropertyValue('--hy') || '40%');
-    }
-  }
-  
   const x = e.clientX, y = e.clientY;
   magScope.style.transform = `translate(${x-R}px, ${y-R}px)`;
-  
-  if (!magRect) sizeCloneToSource();
-  const sx = x - magRect.left;
-  const sy = y - magRect.top;
+  if (!sceneRect) sizeCloneToScene();
+  const sx = x - sceneRect.left;
+  const sy = y - sceneRect.top;
   magInner.style.transform = `translate(${-sx*SCALE + R}px, ${-sy*SCALE + R}px) scale(${SCALE})`;
 }, { passive:true });
 
@@ -678,25 +593,25 @@ intro.addEventListener('click', async ()=>{
   try { await bgm.play(); } catch {}
   muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
 });
-/* ---------- Puzzle 1: Right-side tiki strip (updated with tiki reset + staggered reveal) ---------- */
+
+/* ---------- Puzzle 1: Right-side tiki stack (FORMATTING UPGRADE) ---------- */
 document.getElementById('p1Hot').addEventListener('click', () => {
   if (!document.body.classList.contains('magnify-on')) renderP1();
 });
 
 const P1_GLYPHS = [
   { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
-  { id:'moon',    src:'moon.png',     title:'Moon' },
-  { id:'bat',     src:'bat.png',      title:'Bat' },
-  { id:'child',   src:'child.png',    title:'Child' },
   { id:'blood',   src:'blood.png',    title:'Blood' },
-  { id:'vampire', src:'vampire.png',  title:'Vampire' },
+  { id:'bat',     src:'bat.png',      title:'Bat' },
+  { id:'bird',    src:'bird.png',     title:'Bird' },
+  { id:'child',   src:'child.png',    title:'Child' },
   { id:'cloud',   src:'cloud.png',    title:'Mist' },
+  { id:'moon',    src:'moon.png',     title:'Moon' },
   { id:'oyster',  src:'oyster.png',   title:'Oyster' },
   { id:'sun',     src:'sun.png',      title:'Sun' },
-  { id:'bird',    src:'bird.png',     title:'Bird' },
+  { id:'vampire', src:'vampire.png',  title:'Vampire' },
   { id:'walrus',  src:'walrus.png',   title:'Walrus' },
 ];
-
 const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
 
 function renderP1(){
@@ -704,92 +619,87 @@ function renderP1(){
   panel.innerHTML = `
     <h3>The Totem Stirs</h3>
     <div class="p1box" id="p1box">
-      <div class="p1-whispers left" aria-hidden="true">
+      <div class="p1-whispers" aria-hidden="true">
         <div>The sun was shining on the sea in the middle of the night.</div>
         <div>You could not see a cloud because no cloud was in the sky.</div>
-        <div>And so the cunning walrus ate the oysters one by one.</div>
+        <div>Small oysters fled from cozy beds to hear one who sang so sweet…</div>
+        <div>…and tusks bowed beneath the veil as blood remembered the child.</div>
       </div>
-      <div class="p1-head-container"></div>
-      <div class="p1-whispers right" aria-hidden="true">
-        <div>Its palest blues and darkest hues reflected oh so bright.</div>
-        <div>Small oysters fled from cozy beds to hear one who sang so sweet.</div>
-      </div>
+      <div class="p1-stack" id="p1stack"></div>
       <div class="p1-eyes" aria-hidden="true"></div>
     </div>
-    <p id="p1msg">Arrange the glyphs within each tiki head.</p>
+    <p id="p1msg">Arrange each tiki to the correct glyph.</p>
   `;
 
-  const headContainer = panel.querySelector('.p1-head-container');
-  const box = document.getElementById('p1box');
-  const msg = document.getElementById('p1msg');
-  const audioRotate = document.getElementById('sfxRotate');
+  const box       = document.getElementById('p1box');
+  const stack     = document.getElementById('p1stack');
+  const msg       = document.getElementById('p1msg');
+  const sfxRotate = document.getElementById('sfxRotate');
 
   const tikiIndex = P1_GLYPHS.findIndex(g => g.id === 'tiki');
-  const indices = new Array(5).fill(tikiIndex); // Start with tiki head
-  const btns = [];
-  let locked = false;
+  const indices   = new Array(5).fill(tikiIndex);
+  const btns      = [];
+  let   locked    = false;
 
-  for (let i = 0; i < 5; i++) {
+  for (let i = 0; i < 5; i++){
     const btn = document.createElement('button');
     btn.className = 'p1-head';
-    btn.setAttribute('aria-label', `Tiki head ${i+1}`);
+    btn.setAttribute('aria-label', `Tiki dial ${i+1}`);
 
     const img = new Image();
-    img.src = P1_GLYPHS[indices[i]].src;
-    img.alt = '';
+    img.src   = P1_GLYPHS[tikiIndex].src;
+    img.alt   = '';
+    img.title = P1_GLYPHS[tikiIndex].title;
     btn.appendChild(img);
 
-    btn.addEventListener('click', () => {
+    btn.addEventListener('click', ()=>{
       if (locked) return;
-      
-      let currentSymbolIndex = indices[i];
-      currentSymbolIndex = (currentSymbolIndex + 1) % P1_GLYPHS.length;
-      if (P1_GLYPHS[currentSymbolIndex].id === 'tiki') {
-          currentSymbolIndex = (currentSymbolIndex + 1) % P1_GLYPHS.length;
-      }
-      indices[i] = currentSymbolIndex;
-      
-      img.src = P1_GLYPHS[indices[i]].src;
-      img.title = P1_GLYPHS[indices[i]].title;
 
-      const dir = Math.random() > 0.5 ? 15 : -15;
-      btn.style.transform = `rotate(${dir}deg)`;
-      setTimeout(() => { btn.style.transform = `rotate(0deg)`; }, 150);
+      // advance to next glyph
+      indices[i] = (indices[i] + 1) % P1_GLYPHS.length;
+      const g = P1_GLYPHS[indices[i]];
+      img.src = g.src; img.title = g.title;
 
-      try { audioRotate.currentTime = 0; audioRotate.play(); } catch {}
+      // quick spin effect
+      const spinY = Math.random() > 0.5 ? 360 : -360;
+      img.style.transform = `rotateY(${spinY}deg)`;
+      setTimeout(()=>{ img.style.transform = ''; }, 320);
 
-      if (p1IsSolved(indices)) {
+      // rotate sound
+      try { if (sfxRotate){ sfxRotate.currentTime = 0; sfxRotate.play(); } } catch {}
+
+      if (p1IsSolved(indices)){
         locked = true;
-        msg.textContent = 'The glyphs align. Something awakens.';
-        try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
+        msg.textContent = 'The carvings align…';
 
-        btns.forEach(({ btn, img }, j) => {
-          setTimeout(() => {
-            indices[j] = tikiIndex;
-            img.src = P1_GLYPHS[tikiIndex].src;
-            const randDir = (Math.random() > 0.5 ? 360 : -360) * 2;
-            btn.style.transitionDuration = '0.6s';
-            btn.style.transform = `rotate(${randDir}deg)`;
-            setTimeout(() => { btn.style.transform = 'rotate(0deg)'; }, 600);
-            if (j === btns.length - 1) {
-              box.classList.add('solved');
-              log('The totem opens its eyes.');
-            }
-          }, j * 200);
+        // Stagger reset back to tiki + eye glow
+        btns.forEach(({btn, img}, j)=>{
+          setTimeout(()=>{
+            const spin = Math.random() > 0.5 ? 360 : -360;
+            btn.style.transform = `rotate(${spin}deg)`;
+            setTimeout(()=>{
+              indices[j] = tikiIndex;
+              img.src = P1_GLYPHS[tikiIndex].src;
+              btn.style.transform = '';
+              if (j === btns.length - 1) box.classList.add('solved');
+            }, 260);
+          }, j * 220);
         });
+      } else {
+        box.classList.remove('solved');
+        msg.textContent = 'Arrange each tiki to the correct glyph.';
       }
     });
 
-    headContainer.appendChild(btn);
-    btns.push({ btn, img });
+    stack.appendChild(btn);
+    btns.push({btn, img});
   }
 }
 
 function p1IsSolved(indices){
   if (indices.length !== P1_SOLUTION.length) return false;
-  for (let i = 0; i < indices.length; i++) {
-    const current = P1_GLYPHS[indices[i]].id;
-    if (current !== P1_SOLUTION[i]) return false;
+  for (let i=0; i<indices.length; i++){
+    if (P1_GLYPHS[ indices[i] ].id !== P1_SOLUTION[i]) return false;
   }
   return true;
 }
