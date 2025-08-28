@@ -49,12 +49,16 @@
     radial-gradient(200% 200% at 50% 50%, transparent 60%, rgba(255,255,255,.025) 100%);}
   .front{transform: translateZ(var(--half));}
   .back{transform: rotateY(180deg) translateZ(var(--half));}
-/* Right face texture — higher specificity + cache-buster */
+/* Right face texture — strong specificity, no shorthand resets */
 #cube .face.right{
   transform: rotateY(90deg) translateZ(var(--half));
-  position:relative;
-  background:#111 url('FirstPuzzleTexturepng.png?v=2') center/cover no-repeat;
-  /* outline:2px solid magenta;  /* ← uncomment to see the face bounds while debugging */
+  position: relative;
+  background-color:#111;                     /* base */
+  background-image: url('FirstPuzzleTexturepng.png?v=2'); /* your texture */
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  /* outline:2px solid magenta;  /* ← uncomment to see bounds while debugging */
 }
   .hot-right{ position:absolute; inset:0; background:transparent; border:0; cursor:pointer; z-index:20; pointer-events:auto; }
 .left{   transform: rotateY(-90deg) translateZ(var(--half)); }
