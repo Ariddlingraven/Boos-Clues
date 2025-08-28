@@ -50,32 +50,19 @@
   .front{transform: translateZ(var(--half));}
   .back{transform: rotateY(180deg) translateZ(var(--half));}
 
-  /* Right face texture — strong specificity, no shorthand resets */
-  #cube .face.right{
-    transform: rotateY(90deg) translateZ(var(--half));
-    position:relative;
-    background-color:#111;
-    background-image: url('FirstPuzzleTexturepng.png?v=2');
-    background-position:center;
-    background-size:cover;
-    background-repeat:no-repeat;
-    /* outline:2px solid magenta;  /* ← uncomment to see the face bounds while debugging */
+  /* RIGHT FACE becomes Puzzle 1 panel and gets an open-hotspot */
+  .right{
+    transform: rotateY( 90deg) translateZ(var(--half));
+    background:#111 url('FirstPuzzleTexturepng.png') center/cover no-repeat; /* exact filename/case */
   }
-
-  .hot-right{ position:absolute; inset:0; background:transparent; border:0; cursor:pointer; z-index:20; pointer-events:auto; }
-  .left{   transform: rotateY(-90deg) translateZ(var(--half)); }
-  .top{    transform: rotateX( 90deg) translateZ(var(--half)); }
-  .bottom{ transform: rotateX(-90deg) translateZ(var(--half)); }
-
-  /* BIG/EASY hotspot on the right cube face */
   .hot-right{
-    position:absolute;
-    inset:0;
-    background:transparent;
-    border:0;
-    cursor:pointer;
-    z-index:10; /* above face & sheen */
+    position:absolute; inset:10% 12% 10% 12%;
+    background:transparent; border:0; cursor:zoom-in;
   }
+
+  .left{transform: rotateY(-90deg) translateZ(var(--half));}
+  .top{transform: rotateX( 90deg) translateZ(var(--half));}
+  .bottom{transform: rotateX(-90deg) translateZ(var(--half));}
 
   /* Bat hotspot on front */
   .hot-bat{
@@ -85,7 +72,7 @@
     z-index:9;
   }
   .hot-bat:hover{ transform:translateY(-2px); filter:drop-shadow(0 6px 10px rgba(0,0,0,.7)); }
-  .magnify-on .hot-bat{ pointer-events:none; }
+  .magnify-on .hot-bat{ pointer-events:none; } /* block bat while scoping */
 
   /* Overlay (puzzle zoom) */
   #overlay{ position:absolute; inset:0; display:none; place-items:center; background: radial-gradient(#000a, #000f); z-index:10; pointer-events:none; }
@@ -152,77 +139,81 @@
   .spark{ position:absolute; width:4px; height:4px; background:#ffe9b8; border-radius:50%; pointer-events:none; filter:drop-shadow(0 0 6px #ffe9b8); animation:pop .6s ease forwards; }
   @keyframes pop{ 0%{opacity:0; transform:translate(var(--x),var(--y)) scale(.4)} 40%{opacity:1} 100%{opacity:0; transform:translate(calc(var(--x) * 2), calc(var(--y) * 2)) scale(.1)} }
 
-  /* ---------- Puzzle 1: stacked tiki-head dials ---------- */
-  .p1box{
-    position:relative;
-    width:min(700px, 95vw);
-    height:min(520px, 74vh);
-    background:#111;
-    border:1px solid #3b3122;
-    border-radius:12px;
-    overflow:hidden;
-    box-shadow:inset 0 0 40px rgba(0,0,0,.55);
-  }
-  .p1-stack{
-    position:absolute;
-    inset:6% 0 8% 0;
-    display:grid;
-    grid-template-rows:repeat(5, 1fr);
-    place-items:center;
-    gap:6px;
-  }
-  .p1-head{
-    width:28%;
-    aspect-ratio:1/1;
-    background:none; border:0; padding:0;
-    display:flex; align-items:center; justify-content:center;
-    cursor:pointer;
-    transform:rotate(0deg);
-    transition:transform .28s ease;
-  }
-  .p1-head img{
-    width:100%; height:auto; display:block; pointer-events:none;
-    transition:transform .32s ease;
-  }
-  @media (max-width: 560px){
-    .p1box{ height:min(520px, 70vh); }
-    .p1-head{ width:34%; }
-  }
-  .p1-eyes{
-    position:absolute; inset:0; pointer-events:none; opacity:0; transition:opacity .25s ease;
-    background:
-      radial-gradient(10px 8px at 50% 12%, rgba(255,0,0,.9), transparent 60%),
-      radial-gradient(10px 8px at 50% 32%, rgba(255,0,0,.9), transparent 60%),
-      radial-gradient(10px 8px at 50% 52%, rgba(255,0,0,.9), transparent 60%),
-      radial-gradient(10px 8px at 50% 72%, rgba(255,0,0,.9), transparent 60%),
-      radial-gradient(10px 8px at 50% 92%, rgba(255,0,0,.9), transparent 60%);
-    mix-blend-mode:screen;
-  }
-  .p1box.solved .p1-eyes{ opacity:1; }
-
-  .p1-whispers{
-    position:absolute; inset:8% 6%;
-    pointer-events:none;
-    font:10px/1.3 "MrDarcy", serif;
-    color:rgba(255,255,255,0.04);
-    letter-spacing:.06em; filter:blur(.25px);
-  }
-  .magnify-on .p1-whispers{
-    color:#b00404;
-    text-shadow:0 0 6px rgba(176,4,4,.7), 0 0 12px rgba(176,4,4,.45);
-  }
-
-  @media (max-width: 560px){
-    .p1box{ height:min(520px, 70vh); }
-    .p1-head{ width:42%; }
-  }
+  /* Puzzle 1 — Five rotating tiki heads */
+.p1box {
+  position: relative;
+  width: min(700px, 92vw);
+  height: min(500px, 68vh);
+  background: #111;
+  border: 1px solid #3b3122;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: inset 0 0 40px rgba(0,0,0,0.55);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+  padding: 12px 0;
+}
+.p1-head {
+  width: 54%;
+  aspect-ratio: 1/1;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transform: rotate(0deg);
+  transition: transform 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.p1-head img {
+  width: 100%;
+  height: auto;
+  display: block;
+  pointer-events: none;
+}
+.p1-eyes {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+  background:
+    radial-gradient(10px 8px at 50% 12%, rgba(255,0,0,0.9), transparent 60%),
+    radial-gradient(10px 8px at 50% 32%, rgba(255,0,0,0.9), transparent 60%),
+    radial-gradient(10px 8px at 50% 52%, rgba(255,0,0,0.9), transparent 60%),
+    radial-gradient(10px 8px at 50% 72%, rgba(255,0,0,0.9), transparent 60%),
+    radial-gradient(10px 8px at 50% 92%, rgba(255,0,0,0.9), transparent 60%);
+  mix-blend-mode: screen;
+}
+.p1box.solved .p1-eyes {
+  opacity: 1;
+}
+.p1-whispers {
+  position: absolute;
+  inset: 8% 6%;
+  pointer-events: none;
+  font: 10px/1.3 "MrDarcy", serif;
+  color: rgba(255,255,255,0.04);
+  letter-spacing: .06em;
+  filter: blur(.3px);
+}
+.magnify-on .p1-whispers {
+  color: #b00404;
+  text-shadow: 0 0 6px rgba(176,4,4,.7), 0 0 12px rgba(176,4,4,.45);
+}
+.hot-right {
+  position: absolute;
+  inset: 10% 12% 10% 12%;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
 
   /* Intro title screen */
-  #intro{
-    position:fixed; inset:0; background:rgba(0,0,0,0.82);
-    color:#e9dfcf; display:flex; align-items:center; justify-content:center; text-align:center;
-    z-index:10000; padding:6vh 6vw; cursor:pointer;
-  }
+  #intro{ position:fixed; inset:0; background:rgba(0,0,0,0.82); color:#e9dfcf; display:flex; align-items:center; justify-content:center; text-align:center; z-index:10000; padding:6vh 6vw; cursor:pointer; }
   #intro .inner{ max-width:900px; line-height:1.5; font-size:clamp(18px, 2.2vw, 28px); text-shadow:0 2px 14px rgba(0,0,0,.7); }
   #intro .tap{ margin-top:1.2rem; font-size:0.85em; color:#cdbb9a; opacity:.9; }
 </style>
@@ -319,13 +310,13 @@ function slideSfx(){
 
 /* ------ cube rotation (pointer events; hotspot gate) ------ */
 const cube=document.getElementById('cube'), scene=document.getElementById('scene');
-let rotY=-90, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0; // face RIGHT at load
+let rotY=-90, rotX=0, dragging=false, sx=0, sy=0, vy=0, vx=0, raf=null, lastT=0; // <<< face the RIGHT side at load
 function updateCube(){ cube.style.transform=`rotateX(${rotX}deg) rotateY(${rotY}deg)`; }
 function tick(t){ if(!lastT) lastT=t; const dt=(t-lastT)/16.67; lastT=t; rotY+=vy*dt; rotX+=vx*dt; vy*=0.95; vx*=0.95; rotX=Math.max(-89,Math.min(89,rotX)); updateCube(); if(Math.hypot(vx,vy)>0.02) raf=requestAnimationFrame(tick); else {raf=null; lastT=0;} }
 
 cube.addEventListener('pointerdown', e => {
-  if (document.body.classList.contains('magnify-on')) return;
-  if (e.target.closest('.hot-bat')) return;
+  if (document.body.classList.contains('magnify-on')) return; // no drag while scoping
+  if (e.target.closest('.hot-bat')) return;  // leave bat click alone
   dragging = true;
   if (cube.setPointerCapture) cube.setPointerCapture(e.pointerId);
   sx = e.clientX; sy = e.clientY;
@@ -484,7 +475,7 @@ lens.addEventListener('click', ()=>{
 
 /* ------ bat hotspot → pre-puzzle ------ */
 document.getElementById('batHotspot').addEventListener('click', ()=>{
-  if (document.body.classList.contains('magnify-on')) return;
+  if (document.body.classList.contains('magnify-on')) return; // block while scoping
   renderP0();
 });
 
@@ -588,7 +579,7 @@ function renderP0(){
       flashMsg.textContent = "";
       log('Something below slides open…');
       setTimeout(()=>{ unlatchDrawerAnimated(); }, 2000);
-    }, 1000);
+    }, 1000); /* 1s red */
   }
 }
 
@@ -644,75 +635,36 @@ window.addEventListener('mousemove', (e)=>{
   magInner.style.transform = `translate(${-sx*SCALE + R}px, ${-sy*SCALE + R}px) scale(${SCALE})`;
 }, { passive:true });
 
-/* ---------- Intro title screen: robust start handler ---------- */
-(function(){
-  const intro = document.getElementById('intro');
-  if (!intro) return;
-
-  async function startGame(){
-    try {
-      intro.style.transition = 'opacity .35s ease';
-      intro.style.opacity = '0';
-      setTimeout(()=> intro.remove(), 380);
-    } catch { try { intro.remove(); } catch {} }
-    try { await bgm.play(); } catch {}
-    try { muteBtn.textContent = bgm.muted ? '🔇' : '🔊'; } catch {}
-    window.removeEventListener('pointerdown', onAnyPointer);
-    window.removeEventListener('keydown', onAnyKey);
-  }
-
-  intro.addEventListener('click', (e)=>{
-    e.preventDefault();
-    e.stopPropagation();
-    startGame();
-  }, { once:true });
-
-  function onAnyPointer(){ if (document.body.contains(intro)) startGame(); }
-  function onAnyKey(){ if (document.body.contains(intro)) startGame(); }
-  window.addEventListener('pointerdown', onAnyPointer, { passive:true });
-  window.addEventListener('keydown', onAnyKey);
-})();
-
-/* --- sanity check: does the right-face texture actually load? --- */
-(function(){
-  const url = 'FirstPuzzleTexturepng.png?v=2';
-  const img = new Image();
-  img.onload  = ()=> console.log('[RIGHT FACE] loaded OK:', img.width+'x'+img.height, url);
-  img.onerror = ()=> console.error('[RIGHT FACE] FAILED to load → check path/case/folder:', url);
-  img.src = url;
-})();
-
-/* ---------- Puzzle 1 data ---------- */
-const P1_GLYPHS = [
-  { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
-  { id:'blood',   src:'blood.png',    title:'Blood' },
-  { id:'bat',     src:'bat.png',      title:'Bat' },
-  { id:'bird',    src:'bird.png',     title:'Bird' },
-  { id:'child',   src:'child.png',    title:'Child' },
-  { id:'cloud',   src:'cloud.png',    title:'Mist' },
-  { id:'moon',    src:'moon.png',     title:'Moon' },
-  { id:'oyster',  src:'oyster.png',   title:'Oyster' },
-  { id:'sun',     src:'sun.png',      title:'Sun' },
-  { id:'vampire', src:'vampire.png',  title:'Vampire' },
-  { id:'walrus',  src:'walrus.png',   title:'Walrus' },
-];
-const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
-
-/* ---------- Open Puzzle 1 from right face or hotspot ---------- */
-const rightFace = document.querySelector('.face.right');
-const p1Hot     = document.getElementById('p1Hot');
-function openPuzzleClick(e){
-  if (document.body.classList.contains('magnify-on')) return;
-  if (e) e.stopPropagation();
-  renderP1();
-}
-if (p1Hot)     p1Hot.addEventListener('click', openPuzzleClick);
-if (rightFace) rightFace.addEventListener('click', (e)=>{
-  if (e.target.closest('#p1Hot')) return;
-  openPuzzleClick(e);
+/* ---------- Intro title screen: start BGM on first click ---------- */
+const intro = document.getElementById('intro');
+intro.addEventListener('click', async ()=>{
+  intro.style.transition = 'opacity .35s ease';
+  intro.style.opacity = '0';
+  setTimeout(()=> intro.remove(), 380);
+  try { await bgm.play(); } catch {}
+  muteBtn.textContent = bgm.muted ? '🔇' : '🔊';
+});
+/* ---------- Puzzle 1: Right-side tiki strip (updated with tiki reset + staggered reveal) ---------- */
+document.getElementById('p1Hot').addEventListener('click', () => {
+  if (!document.body.classList.contains('magnify-on')) renderP1();
 });
 
-/* ---------- Puzzle 1 renderer ---------- */
+const P1_GLYPHS = [
+  { id:'tiki',    src:'tikihead.png', title:'Tiki Head' },
+  { id:'moon',    src:'moon.png',     title:'Moon' },
+  { id:'bat',     src:'bat.png',      title:'Bat' },
+  { id:'child',   src:'child.png',    title:'Child' },
+  { id:'blood',   src:'blood.png',    title:'Blood' },
+  { id:'vampire', src:'vampire.png',  title:'Vampire' },
+  { id:'cloud',   src:'cloud.png',    title:'Mist' },
+  { id:'oyster',  src:'oyster.png',   title:'Oyster' },
+  { id:'sun',     src:'sun.png',      title:'Sun' },
+  { id:'bird',    src:'bird.png',     title:'Bird' },
+  { id:'walrus',  src:'walrus.png',   title:'Walrus' },
+];
+
+const P1_SOLUTION = ['moon','bat','child','blood','vampire'];
+
 function renderP1(){
   openOverlay();
   panel.innerHTML = `
@@ -720,88 +672,89 @@ function renderP1(){
     <div class="p1box" id="p1box">
       <div class="p1-whispers" aria-hidden="true">
         <div>The sun was shining on the sea in the middle of the night.</div>
+        <div>Its palest blues and darkest hues reflected oh so bright.</div>
         <div>You could not see a cloud because no cloud was in the sky.</div>
-        <div>Small oysters fled from cozy beds to hear one who sang so sweet…</div>
-        <div>…and tusks bowed beneath the veil as blood remembered the child.</div>
+        <div>Small oysters fled from cozy beds to hear one who sang so sweet.</div>
+        <div>And so the cunning walrus ate the oysters one by one.</div>
       </div>
-      <div class="p1-stack" id="p1stack"></div>
       <div class="p1-eyes" aria-hidden="true"></div>
     </div>
-    <p id="p1msg">Arrange each tiki to the correct glyph.</p>
+    <p id="p1msg">Arrange the glyphs within each tiki head.</p>
   `;
 
-  const box       = document.getElementById('p1box');
-  const stack     = document.getElementById('p1stack');
-  const msg       = document.getElementById('p1msg');
-  const sfxRotate = document.getElementById('sfxRotate');
+  const box = document.getElementById('p1box');
+  const msg = document.getElementById('p1msg');
+  const audioRotate = document.getElementById('sfxRotate');
 
   const tikiIndex = P1_GLYPHS.findIndex(g => g.id === 'tiki');
-  const indices   = new Array(5).fill(tikiIndex);
-  const btns      = [];
-  let   locked    = false;
+  const indices = new Array(5).fill(0);
+  const btns = [];
+  let locked = false;
 
-  for (let i = 0; i < 5; i++){
+  for (let i = 0; i < 5; i++) {
     const btn = document.createElement('button');
     btn.className = 'p1-head';
-    btn.setAttribute('aria-label', `Tiki dial ${i+1}`);
+    btn.setAttribute('aria-label', `Tiki head ${i+1}`);
 
     const img = new Image();
-    img.src   = P1_GLYPHS[tikiIndex].src;
-    img.alt   = '';
-    img.title = P1_GLYPHS[tikiIndex].title;
+    img.src = P1_GLYPHS[tikiIndex].src;
+    img.alt = '';
     btn.appendChild(img);
 
-    btn.addEventListener('click', ()=>{
+    btn.addEventListener('click', () => {
       if (locked) return;
-
       indices[i] = (indices[i] + 1) % P1_GLYPHS.length;
-      const g = P1_GLYPHS[indices[i]];
-      img.src = g.src; img.title = g.title;
+      img.src = P1_GLYPHS[indices[i]].src;
+      img.title = P1_GLYPHS[indices[i]].title;
 
-      const spinY = Math.random() > 0.5 ? 360 : -360;
-      img.style.transform = `rotateY(${spinY}deg)`;
-      setTimeout(()=>{ img.style.transform = ''; }, 320);
+      // Rotate effect (optional)
+      const dir = Math.random() > 0.5 ? 360 : -360;
+      btn.style.transform = `rotate(${dir}deg)`;
+      setTimeout(() => { btn.style.transform = `rotate(0deg)`; }, 300);
 
-      try { if (sfxRotate){ sfxRotate.currentTime = 0; sfxRotate.play(); } } catch {}
+      // Play rotate sound
+      try { audioRotate.currentTime = 0; audioRotate.play(); } catch {}
 
-      if (p1Solved(indices)){
+      if (p1IsSolved(indices)) {
         locked = true;
-        msg.textContent = 'The carvings align…';
+        msg.textContent = 'The glyphs align. Something awakens.';
+        try { sfxSlide.currentTime = 0; sfxSlide.play(); } catch {}
 
-        btns.forEach(({btn, img}, j)=>{
-          setTimeout(()=>{
-            const spin = Math.random() > 0.5 ? 360 : -360;
-            btn.style.transform = `rotate(${spin}deg)`;
-            setTimeout(()=>{
-              indices[j] = tikiIndex;
-              img.src = P1_GLYPHS[tikiIndex].src;
-              btn.style.transform = '';
-              if (j === btns.length - 1) box.classList.add('solved');
-            }, 260);
-          }, j * 220);
+        // Reset to tiki head staggered
+        btns.forEach(({ img }, j) => {
+          const randDir = Math.random() > 0.5 ? 360 : -360;
+          setTimeout(() => {
+            indices[j] = tikiIndex;
+            img.src = P1_GLYPHS[tikiIndex].src;
+            btns[j].btn.style.transform = `rotate(${randDir}deg)`;
+            setTimeout(() => { btns[j].btn.style.transform = 'rotate(0deg)'; }, 300);
+            if (j === btns.length - 1) {
+              box.classList.add('solved');
+              log('The totem opens its eyes.');
+            }
+          }, j * 250);
         });
       } else {
         box.classList.remove('solved');
-        msg.textContent = 'Arrange each tiki to the correct glyph.';
+        msg.textContent = 'Arrange the glyphs within each tiki head.';
       }
     });
 
-    stack.appendChild(btn);
-    btns.push({btn, img});
+    box.appendChild(btn);
+    btns.push({ btn, img });
   }
 }
 
-/* ---------- Puzzle 1 helper ---------- */
-function p1Solved(indices){
+function p1IsSolved(indices){
   if (indices.length !== P1_SOLUTION.length) return false;
-  for (let i=0; i<indices.length; i++){
-    if (P1_GLYPHS[ indices[i] ].id !== P1_SOLUTION[i]) return false;
+  for (let i = 0; i < indices.length; i++) {
+    const current = P1_GLYPHS[indices[i]].id;
+    if (current !== P1_SOLUTION[i]) return false;
   }
   return true;
 }
-
 /* boot */
-updateCube(); // shows the RIGHT face at load
+updateCube(); // shows the RIGHT face at load now
 </script>
 </body>
 </html>
