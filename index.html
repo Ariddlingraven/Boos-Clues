@@ -206,6 +206,54 @@
   #intro{ position:fixed; inset:0; background:rgba(0,0,0,0.82); color:#e9dfcf; display:flex; align-items:center; justify-content:center; text-align:center; z-index:10000; padding:6vh 6vw; cursor:pointer; }
   #intro .inner{ max-width:900px; line-height:1.5; font-size:clamp(18px, 2.2vw, 28px); text-shadow:0 2px 14px rgba(0,0,0,.7); }
   #intro .tap{ margin-top:1.2rem; font-size:0.85em; color:#cdbb9a; opacity:.9; }
+  /* --- Bulletproof right face; place this AFTER any .face rules --- */
+#cube .face.right{
+  /* correct 3D placement */
+  transform: rotateY(90deg) translateZ(var(--half));
+
+  /* split background props so a later `background:` can't wipe them */
+  background-color:#111;
+  background-image:url('FirstPuzzleTexturepng.png'); /* exact case/path */
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+
+  position:relative; /* so the hotspot can sit on top */
+}
+
+/* full-face hotspot, normal cursor (no magnifying glass) */
+#cube .face.right .hot-right{
+  position:absolute;
+  inset:0;
+  background:transparent;
+  border:0;
+  cursor:default;   /* ← just a regular pointer/cursor */
+  z-index:10;
+}
+/* --- Bulletproof right face; place this AFTER any .face rules --- */
+#cube .face.right{
+  /* correct 3D placement */
+  transform: rotateY(90deg) translateZ(var(--half));
+
+  /* split background props so a later `background:` can't wipe them */
+  background-color:#111;
+  background-image:url('FirstPuzzleTexturepng.png'); /* exact case/path */
+  background-position:center;
+  background-size:cover;
+  background-repeat:no-repeat;
+
+  position:relative; /* so the hotspot can sit on top */
+}
+
+/* full-face hotspot, normal cursor (no magnifying glass) */
+#cube .face.right .hot-right{
+  position:absolute;
+  inset:0;
+  background:transparent;
+  border:0;
+  cursor:default;   /* ← just a regular pointer/cursor */
+  z-index:10;
+}
 </style>
 </head>
 <body>
@@ -771,7 +819,6 @@ function p1Solved(indices){
 }
 
 /* boot */
-updateCube(); // shows the RIGHT face at load now
 </script>
 </body>
 </html>
