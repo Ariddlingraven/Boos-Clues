@@ -50,12 +50,17 @@
   .front{transform: translateZ(var(--half));}
   .back{transform: rotateY(180deg) translateZ(var(--half));}
 
-  /* RIGHT FACE becomes Puzzle 1 panel and gets an open-hotspot */
-  .right{
-    transform: rotateY( 90deg) translateZ(var(--half));
-    background:#111 url('FirstPuzzleTexturepng.png') center/cover no-repeat; /* exact filename/case */
-    position:relative;
-  }
+/* Puzzle‑1 right face */
+.right {
+  transform: rotateY(90deg) translateZ(var(--half));
+  /* Split shorthand to avoid being overwritten */
+  background-color: #111;
+  background-image: url('FirstPuzzleTexturepng.png'); /* exact filename/case */
+  background-position: center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  position: relative; /* so hotspots can sit on top */
+}
   /* FIX #1: hot area uses normal cursor (no magnifying glass) */
   .hot-right{
     position:absolute; inset:10% 12% 10% 12%;
